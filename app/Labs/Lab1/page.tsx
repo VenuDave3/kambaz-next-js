@@ -14,7 +14,7 @@ export default function Lab1() {
         <li><a href="/Account/Signin">Kambaz Application</a></li>
         <li>
           <a
-            href="https://github.com/yourusername/kambaz-next-js"
+            href="https://github.com/VenuDave3/kambaz-next-js"
             target="_blank"
             rel="noreferrer"
           >

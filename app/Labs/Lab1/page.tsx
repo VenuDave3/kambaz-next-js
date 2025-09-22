@@ -5,8 +5,8 @@ export default function Lab1() {
     <div id="wd-lab1">
 
     {/* 👇 Add this Landing section at the very top */}
-      <h2>Lab 1 — Landing</h2>
-      <p><b>Your Full Name</b> — Section XYZ</p>
+    <p><b>Venu Kunjesh Dave</b> Section - 04<b> CRN: 18616 </b></p>
+      <h2>Labs</h2>
       <ul>
         <li><a href="/Labs/Lab1">Lab 1</a></li>
         <li><a href="/Labs/Lab2">Lab 2</a></li>

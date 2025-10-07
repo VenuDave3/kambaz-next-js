@@ -88,13 +88,13 @@ export default function KambazNavigation() {
       <br />
 
       <Link
-        href="/Settings"
-        id="wd-settings-link"
+        href="/Labs"
+        id="wd-labs-link"
         className="list-group-item border-0 bg-black text-center text-white text-decoration-none"
       >
         <LiaCogSolid className="fs-1 text-danger" />
         <br />
-        Settings
+        Labs
       </Link>
     </ListGroup>
   );

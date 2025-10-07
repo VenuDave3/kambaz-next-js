@@ -11,12 +11,14 @@ export default function Signin() {
           <FormControl
             id="wd-username"
             placeholder="username"
+            defaultValue="alice"
             className="mb-2"
           />
           <FormControl
             id="wd-password"
             placeholder="password"
             type="password"
+            defaultValue="123"
             className="mb-3"
           />
 

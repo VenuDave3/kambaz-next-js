@@ -5,7 +5,10 @@ import GreenCheckmark from './GreenCheckmark';
 
 export default function ModuleControlButtons() {
   return (
-    <div className="float-end">
+    <div
+      id="wd-module-controls"
+      className="float-end position-relative"
+    >
       <GreenCheckmark />
       <BsPlus className="fs-4 me-1" />
       <IoEllipsisVertical className="fs-4" />

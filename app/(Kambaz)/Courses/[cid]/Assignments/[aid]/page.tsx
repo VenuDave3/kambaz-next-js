@@ -9,7 +9,6 @@ export default function EditAssignmentPage({
 }: {
   params: Promise<{ cid: string; aid: string }>;
 }) {
-  // ✅ Next.js 15: unwrap route params (they are a Promise)
   const { cid, aid } = use(params);
 
   const [name, setName] = useState('A1');

@@ -256,3 +256,37 @@ body * {
   font-size: 1.25rem;
   font-weight: 600;
 }
+
+/* --- Keep module control icons above list items --- */
+#wd-module-controls {
+  position: relative;      /* establish stacking context */
+  z-index: 1800;           /* higher than list items/cards */
+}
+
+/* If any ancestor clips, allow overflow so icons/menus won't be cut off */
+#wd-modules,
+#wd-modules .list-group,
+#wd-modules .list-group-item,
+#wd-modules .wd-module {
+  overflow: visible !important;
+}
+
+/* Already recommended for the Publish All dropdown */
+#wd-modules-controls,
+#wd-modules-controls .dropdown,
+#wd-modules-controls .dropdown-menu {
+  z-index: 2000 !important;
+  position: relative;
+}
+
+/* Ensures dropdown overlays other UI */
+.wd-dropdown-fix {
+  z-index: 2000 !important;
+  position: absolute !important;
+}
+
+#wd-modules-controls {
+  overflow: visible;
+}
+
+

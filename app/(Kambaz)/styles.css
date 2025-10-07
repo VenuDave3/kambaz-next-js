@@ -1,0 +1,258 @@
+/* ===== Base & Kambaz Offset (from earlier) ===== */
+body {
+  margin: 0;
+  padding: 0;
+}
+body * {
+  font-family: Arial, Helvetica, sans-serif;
+}
+@media (min-width: 768px) {
+  #wd-kambaz .wd-main-content-offset {
+    padding-left: 140px !important;
+  }
+}
+/* Active item in Kambaz/Course navs */
+.list-group.wd > .list-group-item.active {
+  color: black;
+  background-color: white;
+  border-left: 3px solid black !important;
+}
+/* Subtle borders on list items (used later in Modules/People) */
+.list-group-item {
+  --bs-list-group-border-color: gray;
+}
+
+/* ===== Dashboard tweaks (new for 2.4.2) ===== */
+#wd-dashboard #wd-dashboard-courses .wd-dashboard-row {
+  /* Increase vertical spacing slightly to ~32px between rows */
+  row-gap: 2rem; /* 32px on most browsers */
+}
+
+/* Fix card column width near 300px and allow wrapping */
+#wd-dashboard .wd-dashboard-course {
+  width: 300px;
+}
+
+/* Optional: prevent the card link from affecting inner spacing */
+#wd-dashboard .wd-dashboard-course-link {
+  display: block;
+}
+
+/* Ensure there’s comfortable space from left sidebar (already handled by offset)
+   and a bit of padding around the grid area for breathing room */
+#wd-dashboard {
+  padding-right: 12px;
+}
+/* ===== 2.4.3 Course Navigation sidebar tweaks ===== */
+
+/* Make course nav buttons feel larger/tappable and remove extra inner spacing */
+#wd-courses-navigation .list-group-item {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+/* Keep the look consistent with the requirement: active = white bg + black left border (already defined)
+   non-active links show as red text on white bg-less items via Bootstrap "text-danger" class */
+
+/* ===== Modules screen (2.4.4) ===== */
+
+/* Override Bootstrap "secondary" to match Canvas-ish gray buttons */
+.btn-secondary {
+  --bs-btn-color: #000 !important;
+  --bs-btn-bg: #c7cdd1 !important;
+  --bs-btn-border-color: #c7cdd1 !important;
+  --bs-btn-hover-color: #fff !important;
+}
+
+/* Make the gray section headers lighter */
+.bg-secondary {
+  --bs-secondary-rgb: 199, 205, 209; /* rgb(199,205,209) */
+}
+
+/* Green left border on lessons */
+.wd-lesson {
+  border-left: 3px solid green !important;
+}
+
+/* Optional: give module containers a light gray border */
+.border-gray {
+  border: 1px solid #cfcfcf !important;
+}
+
+/* Make module/lesson titles align nicely with their drag handles */
+#wd-modules .wd-title,
+#wd-modules .wd-lesson {
+  line-height: 1.4;
+}
+
+/* Ensure control buttons float to the right without collapsing container height */
+#wd-modules-controls,
+#wd-modules .wd-title,
+#wd-modules .wd-lesson {
+  overflow: auto; /* establishes a new block formatting context to clear floats */
+}
+
+/* Slight spacing tweaks inside lessons */
+#wd-modules .wd-lesson {
+  padding-top: 0.85rem !important;
+  padding-bottom: 0.85rem !important;
+}
+
+/* Left course navigation sizing (tappable) */
+#wd-courses-navigation .list-group-item {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+/* ===== 2.4.5 Course Status (Home) ===== */
+#wd-course-status h2 {
+  margin-bottom: 0.75rem;
+}
+#wd-course-status .btn {
+  border-radius: 0.5rem; /* subtle rounding for big buttons */
+}
+/* ===== 2.4.6 People table tweaks ===== */
+#wd-people-table table {
+  margin-top: 0.5rem;
+}
+#wd-people-table .wd-full-name {
+  font-weight: 500;
+}
+/* ===== Assignments (2.4.7) — Canvas-like look ===== */
+
+/* center the main column width like the screenshot */
+#wd-assignments .wd-assignments-container {
+  width: 100%;
+  max-width: 760px;
+}
+
+/* group header styling */
+#wd-assignments .wd-assignments-group .group-header {
+  border-bottom: 1px solid #cfcfcf;
+  padding-right: 0.75rem;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+#wd-assignments .wd-assignments-group {
+  border-radius: 6px;
+}
+
+/* each item’s green left stripe */
+#wd-assignments .wd-assignment {
+  border-left: 3px solid #198754 !important; /* Bootstrap green */
+}
+
+/* title = black, bold */
+#wd-assignments .wd-assignment-title {
+  color: #212529; /* text-dark */
+  font-weight: 700;
+}
+
+/* red label “Multiple Modules” */
+#wd-assignments .wd-assign-type {
+  color: #dc3545; /* Bootstrap danger red */
+  font-weight: 600;
+}
+
+/* bold the words “Not available until” and “Due” */
+#wd-assignments .wd-assign-availability .label,
+#wd-assignments .wd-assign-due .label {
+  font-weight: 700;
+}
+
+/* stack the two sublines tightly */
+#wd-assignments .wd-assignment-line1,
+#wd-assignments .wd-assignment-line2 {
+  line-height: 1.25;
+  font-size: 0.95rem;
+}
+
+/* right controls (green check + kebab) */
+#wd-assignments .wd-assign-right-controls {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+/* search placeholder tint (subtle) */
+#wd-assignments #wd-assignments-search::placeholder {
+  color: #6c757d;
+}
+
+/* rounded buttons in toolbar */
+#wd-assignments .btn {
+  border-radius: 0.5rem;
+}
+
+/* ===== 2.4.8 polish ===== */
+#wd-assignment-editor .wd-editor-container {
+  width: 100%;
+  max-width: 780px;            /* a touch narrower for the Canvas feel */
+}
+
+#wd-assignment-editor .form-label.fw-semibold {
+  color: #6c757d;               /* subtle grey labels like screenshot */
+  font-weight: 600 !important;
+}
+
+#wd-assignment-editor .card.border-secondary-subtle {
+  border-color: #e5e7ea !important; /* softer border */
+  border-radius: 8px;
+}
+
+#wd-assignment-editor .card .form-check {
+  margin-bottom: 0.25rem;
+}
+
+#wd-assignment-editor .btn {
+  border-radius: 0.5rem;        /* rounded Cancel/Save */
+}
+#wd-assignment-editor .btn-danger {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+/* give the Assign panel title a bit of space like Canvas */
+#wd-assignment-editor label[for="wd-assignment-assign"] {
+  margin-bottom: .5rem;
+}
+
+/* tighten the two-column area */
+#wd-assignment-editor .row.g-4 > [class*="col-"] .form-group:last-child {
+  margin-bottom: 0;
+}
+
+#wd-assignment-editor .card.border-secondary-subtle .card-body {
+  background: #fff;             /* keep white */
+}
+
+/* vertical editor width like the screenshot */
+#wd-assignment-editor .wd-editor-container {
+  width: 100%;
+  max-width: 640px;   /* narrower so it stacks nicely */
+}
+#wd-assignment-editor .card.border-secondary-subtle {
+  border-color: #e5e7ea !important;
+  border-radius: 8px;
+}
+#wd-assignment-editor .btn {
+  border-radius: 0.5rem;
+}
+
+/* ===== 2.4.9 Account screens ===== */
+
+/* active look same as course nav (white bg, black left border) */
+#wd-account .list-group.wd > .list-group-item.active {
+  color: black;
+  background-color: white;
+  border-left: 3px solid black !important;
+}
+
+/* small, centered cards like the figure */
+.account-form {
+  max-width: 360px;
+}
+.account-form h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}

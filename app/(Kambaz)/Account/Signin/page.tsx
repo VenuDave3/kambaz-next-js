@@ -1,17 +1,36 @@
+"use client";
 import Link from "next/link";
+import { Form, FormControl, Button, Card } from "react-bootstrap";
 
 export default function Signin() {
   return (
-    <div id="wd-signin-screen">
-      <h3>Sign in</h3>
-      <input placeholder="username" className="wd-username" /> <br />
-      <input placeholder="password" type="password" className="wd-password" /> <br />
+    <div id="wd-signin-screen" className="account-form">
+      <h2 className="mb-3">Signin</h2>
+      <Card className="p-3">
+        <Form>
+          <FormControl
+            id="wd-username"
+            placeholder="username"
+            className="mb-2"
+          />
+          <FormControl
+            id="wd-password"
+            placeholder="password"
+            type="password"
+            className="mb-3"
+          />
 
-      {/* Go to Dashboard after signing in */}
-      <Link id="wd-signin-btn" href="/Dashboard"> Sign in </Link> <br />
+          <Link href="/Dashboard" passHref legacyBehavior>
+            <Button id="wd-signin-btn" variant="primary" className="w-100 mb-2">
+              Signin
+            </Button>
+          </Link>
 
-      {/* Keep signup link pointing to Signup */}
-      <Link id="wd-signup-link" href="Signup"> Sign up </Link>
+          <Link id="wd-signup-link" href="/Account/Signup">
+            Signup
+          </Link>
+        </Form>
+      </Card>
     </div>
   );
 }

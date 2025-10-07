@@ -1,17 +1,21 @@
-import Modules from "../Modules/page";
-import CourseStatus from "./Status";
+'use client';
+import Modules from '../Modules/page';
+import CourseStatus from './Status';
 
-export default function Home() {
+export default function CourseHome() {
   return (
     <div id="wd-home">
-      <table>
-        <tbody>
-          <tr>
-            <td valign="top" width="70%"><Modules /></td>
-            <td valign="top"><CourseStatus /></td>
-          </tr>
-        </tbody>
-      </table>
+      <div className="d-flex">
+        {/* modules on the left */}
+        <div className="flex-fill me-3">
+          <Modules />
+        </div>
+
+        {/* course status on the right, hidden < lg */}
+        <div className="d-none d-lg-block">
+          <CourseStatus />
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,9 +1,17 @@
 'use client';
+import { use } from 'react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { Button, Card, Form } from 'react-bootstrap';
 
-export default function EditAssignmentPage() {
+export default function EditAssignmentPage({
+  params,
+}: {
+  params: Promise<{ cid: string; aid: string }>;
+}) {
+  // ✅ Next.js 15: unwrap route params (they are a Promise)
+  const { cid, aid } = use(params);
+
   const [name, setName] = useState('A1');
   const [points, setPoints] = useState(100);
   const [group, setGroup] = useState('ASSIGNMENTS');
@@ -15,11 +23,13 @@ export default function EditAssignmentPage() {
 
   return (
     <div id="wd-assignment-editor" className="p-3">
+      {/* (optional) show which course/assignment you’re editing */}
+      <h3 className="mb-3">Edit Assignment {aid} · Course {cid}</h3>
+
       {/* one centered, vertical column like the screenshot */}
       <div className="wd-editor-container mx-auto">
-
-        {/* Assignment Name */}
         <Form>
+          {/* Assignment Name */}
           <Form.Group className="mb-3" controlId="wd-assignment-name">
             <Form.Label className="fw-semibold">Assignment Name</Form.Label>
             <Form.Control

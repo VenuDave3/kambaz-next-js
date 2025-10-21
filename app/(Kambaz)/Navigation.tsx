@@ -1,101 +1,74 @@
 'use client';
 import Link from 'next/link';
-import { ListGroup } from 'react-bootstrap';
+import { ListGroup, ListGroupItem } from 'react-bootstrap'; // Ensure ListGroupItem is imported
 import { AiOutlineDashboard } from 'react-icons/ai';
 import { IoCalendarOutline } from 'react-icons/io5';
 import { LiaBookSolid, LiaCogSolid } from 'react-icons/lia';
 import { FaInbox, FaRegCircleUser } from 'react-icons/fa6';
+import { usePathname } from "next/navigation"; // <-- IMPORTANT: Import usePathname
 
 export default function KambazNavigation() {
+  const pathname = usePathname();
+
+  // Data structure for navigation links, as required by the assignment (3.8.1)
+  const links = [
+    { label: "Dashboard", path: "/Dashboard", icon: AiOutlineDashboard },
+    // As per the prompt, Courses should navigate to /Dashboard since it's the landing point for course selection
+    { label: "Courses",   path: "/Dashboard", icon: LiaBookSolid }, 
+    { label: "Calendar",  path: "/Calendar",  icon: IoCalendarOutline },
+    { label: "Inbox",     path: "/Inbox",     icon: FaInbox },
+    { label: "Labs",      path: "/Labs",             icon: LiaCogSolid },
+  ];
+  
+  // Helper function to check if the current link is active (for dynamic highlighting)
+  const getLinkClass = (label: string) => {
+    // Check if the pathname includes the label (e.g., /Dashboard or /Courses/RS101/Modules)
+    const isActive = pathname.includes(label); 
+    
+    // Apply classes for background/text color based on active state
+    return `text-center border-0 
+            ${isActive ? "text-danger bg-white" : "text-white bg-black"}`;
+  };
+
   return (
     <ListGroup
       id="wd-kambaz-navigation"
       style={{ width: 120 }}
       className="wd rounded-0 position-fixed bottom-0 top-0 d-none d-md-block bg-black z-2"
     >
-      {/* NEU Logo */}
-      <Link
-        className="list-group-item bg-black border-0 text-center"
-        id="wd-neu-link"
-        href="https://www.northeastern.edu/"
-        target="_blank"
-      >
+      {/* 1. NEU Logo Link (Remains static) */}
+      <ListGroupItem id="wd-neu-link" target="_blank" href="https://www.northeastern.edu/"
+        as={Link} action className="bg-black border-0 text-center">
         <img src="/images/NEU.png" width="75" alt="Northeastern University" />
-      </Link>
+      </ListGroupItem>
 
-      <br />
-
-      {/* Account (white icon) */}
-      <Link
-        href="/Account"
-        id="wd-account-link"
-        className="list-group-item border-0 bg-black text-center text-white text-decoration-none"
+      {/* 2. Account Link (Custom highlighting logic) */}
+      <ListGroupItem as={Link} href="/Account"
+        className={getLinkClass("Account")}
       >
-        <FaRegCircleUser className="fs-1 text-white" />
+        <FaRegCircleUser
+          // Change icon color based on active status
+          className={`fs-1 ${pathname.includes("Account") ? "text-danger" : "text-white"}`} 
+        />
         <br />
         Account
-      </Link>
+      </ListGroupItem>
 
-      <br />
-
-      {/* Dashboard selected (white bg + red icon/text) */}
-      <Link
-        href="/Dashboard"
-        id="wd-dashboard-link"
-        className="list-group-item active border-0 text-center text-decoration-none"
-      >
-        <AiOutlineDashboard className="fs-1 text-danger" />
-        <br />
-        <span className="text-danger">Dashboard</span>
-      </Link>
-
-      <br />
-
-      <Link
-        href="/Calendar"
-        id="wd-calendar-link"
-        className="list-group-item border-0 bg-black text-center text-white text-decoration-none"
-      >
-        <IoCalendarOutline className="fs-1 text-danger" />
-        <br />
-        Calendar
-      </Link>
-
-      <br />
-
-      <Link
-        href="/Inbox"
-        id="wd-inbox-link"
-        className="list-group-item border-0 bg-black text-center text-white text-decoration-none"
-      >
-        <FaInbox className="fs-1 text-danger" />
-        <br />
-        Inbox
-      </Link>
-
-      <br />
-
-      <Link
-        href="/Courses/1234/Home"
-        id="wd-courses-link"
-        className="list-group-item border-0 bg-black text-center text-white text-decoration-none"
-      >
-        <LiaBookSolid className="fs-1 text-danger" />
-        <br />
-        Courses
-      </Link>
-
-      <br />
-
-      <Link
-        href="/Labs"
-        id="wd-labs-link"
-        className="list-group-item border-0 bg-black text-center text-white text-decoration-none"
-      >
-        <LiaCogSolid className="fs-1 text-danger" />
-        <br />
-        Labs
-      </Link>
+      {/* 3. DYNAMICALLY GENERATED LINKS */}
+      {links.map((link) => (
+        <ListGroupItem 
+          key={link.path + link.label} 
+          as={Link} 
+          href={link.path}
+          // Use dynamic class helper for highlighting
+          className={getLinkClass(link.label)}
+        >
+          {/* Render the icon component passed in the data structure */}
+          {link.icon({ className: "fs-1 text-danger"})}
+          <br />
+          {link.label}
+        </ListGroupItem>
+      ))}
     </ListGroup>
   );
 }

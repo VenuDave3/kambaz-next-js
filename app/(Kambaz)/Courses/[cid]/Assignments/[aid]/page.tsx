@@ -1,174 +1,158 @@
+/* eslint-disable */
+
 'use client';
-import { use } from 'react';
-import { useState } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Button, Card, Form } from 'react-bootstrap';
+import { assignments } from "../../../../Database"; 
+import React from 'react';
+import { FaEllipsisV } from "react-icons/fa";
 
-export default function EditAssignmentPage({
-  params,
-}: {
-  params: Promise<{ cid: string; aid: string }>;
-}) {
-  const { cid, aid } = use(params);
+// Define the interface for Assignment
+interface Assignment {
+    _id: string;
+    title: string;
+    course: string;
+    description: string;
+    points: number;
+    due_date: string;
+    available_date: string;
+    assignment_type: string;
+    submission_type: string;
+    group_name: string;
+    [key: string]: any;
+}
 
-  const [name, setName] = useState('A1');
-  const [points, setPoints] = useState(100);
-  const [group, setGroup] = useState('ASSIGNMENTS');
-  const [displayAs, setDisplayAs] = useState('Percentage');
-  const [submissionType, setSubmissionType] = useState('Online');
-  const [due, setDue] = useState('2024-05-13T23:59');
-  const [availFrom, setAvailFrom] = useState('2024-05-06T00:00');
-  const [until, setUntil] = useState('');
+// NOTE: The 'renderOption' function is removed to fix the error.
+
+export default function AssignmentEditor() {
+  const { cid, aid } = useParams(); 
+
+  const assignmentList: Assignment[] = assignments as Assignment[];
+  const assignment = assignmentList.find((a) => a._id === aid);
+  
+  const assignmentsPath = `/Courses/${cid}/Assignments`;
+
+  if (!assignment) {
+    return <div id="wd-assignment-editor" className="p-3">Assignment Not Found (ID: {aid})</div>;
+  }
 
   return (
-    <div id="wd-assignment-editor" className="p-3">
-      {/* (optional) show which course/assignment you’re editing */}
-      <h3 className="mb-3">Edit Assignment {aid} · Course {cid}</h3>
-
-      {/* one centered, vertical column like the screenshot */}
-      <div className="wd-editor-container mx-auto">
-        <Form>
-          {/* Assignment Name */}
-          <Form.Group className="mb-3" controlId="wd-assignment-name">
-            <Form.Label className="fw-semibold">Assignment Name</Form.Label>
-            <Form.Control
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </Form.Group>
-
-          {/* Description box */}
-          <Form.Group className="mb-4" controlId="wd-assignment-description">
-            <Card className="border-secondary-subtle">
-              <Card.Body className="p-3">
-                <p className="mb-2">
-                  The assignment is{' '}
-                  <Link href="#" className="text-danger">available online</Link>
-                </p>
-                <p className="mb-2">
-                  Submit a link to the landing page of your Web application running on{' '}
-                  <Link href="#" className="text-danger">Netlify</Link>.
-                </p>
-                <p className="mb-2">The landing page should include the following:</p>
-                <ul className="mb-2">
-                  <li>Your full name and section</li>
-                  <li>Links to each of the lab assignments</li>
-                  <li>Link to the Kambaz application</li>
-                  <li>Links to all relevant source code repositories</li>
-                </ul>
-                <p className="mb-0">
-                  The Kambaz application should include a link to navigate back to the landing page.
-                </p>
-              </Card.Body>
-            </Card>
-          </Form.Group>
-
-          {/* Points */}
-          <Form.Group className="mb-3" controlId="wd-assignment-points">
-            <Form.Label className="fw-semibold">Points</Form.Label>
-            <Form.Control
-              type="number"
-              value={points}
-              onChange={(e) => setPoints(parseInt(e.target.value || '0', 10))}
-            />
-          </Form.Group>
-
-          {/* Assignment Group */}
-          <Form.Group className="mb-3" controlId="wd-assignment-group">
-            <Form.Label className="fw-semibold">Assignment Group</Form.Label>
-            <Form.Select value={group} onChange={(e) => setGroup(e.target.value)}>
-              <option>ASSIGNMENTS</option>
-              <option>QUIZZES</option>
-              <option>EXAMS</option>
-            </Form.Select>
-          </Form.Group>
-
-          {/* Display Grade as */}
-          <Form.Group className="mb-4" controlId="wd-assignment-display-as">
-            <Form.Label className="fw-semibold">Display Grade as</Form.Label>
-            <Form.Select
-              value={displayAs}
-              onChange={(e) => setDisplayAs(e.target.value)}
-            >
-              <option>Percentage</option>
-              <option>Points</option>
-              <option>Complete/Incomplete</option>
-            </Form.Select>
-          </Form.Group>
-
-          {/* Submission Type card */}
-          <Form.Group className="mb-4" controlId="wd-assignment-submission-type">
-            <Form.Label className="fw-semibold">Submission Type</Form.Label>
-            <Card className="border-secondary-subtle">
-              <Card.Body>
-                <Form.Select
-                  className="mb-3"
-                  value={submissionType}
-                  onChange={(e) => setSubmissionType(e.target.value)}
-                >
-                  <option>Online</option>
-                  <option>On Paper</option>
-                  <option>No Submission</option>
-                </Form.Select>
-
-                <div className="small text-muted mb-2">Online Entry Options</div>
-                <div className="d-grid gap-2">
-                  <Form.Check type="checkbox" id="wd-entry-text" label="Text Entry" />
-                  <Form.Check type="checkbox" id="wd-entry-url" label="Website URL" defaultChecked />
-                  <Form.Check type="checkbox" id="wd-entry-media" label="Media Recordings" />
-                  <Form.Check type="checkbox" id="wd-entry-annotation" label="Student Annotation" />
-                  <Form.Check type="checkbox" id="wd-entry-files" label="File Uploads" />
-                </div>
-              </Card.Body>
-            </Card>
-          </Form.Group>
-
-          {/* Assign card */}
-          <Form.Group className="mb-4" controlId="wd-assignment-assign">
-            <Form.Label className="fw-semibold">Assign</Form.Label>
-            <Card className="border-secondary-subtle">
-              <Card.Body>
-                <Form.Label className="fw-semibold d-block mb-2">Assign to</Form.Label>
-                <Form.Control className="mb-3" value="Everyone" readOnly />
-
-                <Form.Label className="fw-semibold">Due</Form.Label>
-                <Form.Control
-                  type="datetime-local"
-                  className="mb-3"
-                  value={due}
-                  onChange={(e) => setDue(e.target.value)}
-                />
-
-                <div className="d-flex gap-3 flex-column flex-sm-row">
-                  <div className="flex-fill">
-                    <Form.Label className="fw-semibold">Available from</Form.Label>
-                    <Form.Control
-                      type="datetime-local"
-                      value={availFrom}
-                      onChange={(e) => setAvailFrom(e.target.value)}
-                    />
-                  </div>
-                  <div className="flex-fill">
-                    <Form.Label className="fw-semibold">Until</Form.Label>
-                    <Form.Control
-                      type="datetime-local"
-                      value={until}
-                      onChange={(e) => setUntil(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </Card.Body>
-            </Card>
-          </Form.Group>
-
-          {/* Footer buttons */}
-          <div className="d-flex justify-content-end gap-2">
-            <Button type="button" variant="light" className="border">Cancel</Button>
-            <Button type="submit" variant="danger">Save</Button>
-          </div>
-        </Form>
+    <div id="wd-assignments-editor" className="p-3">
+      
+      {/* Header and Controls */}
+      <div className="d-flex justify-content-end align-items-center mb-4">
+        <div className="text-success fw-bold me-3">Published</div>
+        <button type="button" className="btn btn-secondary me-2">
+          <FaEllipsisV />
+        </button>
       </div>
+      <hr />
+
+      <form action="#" className="assignment-editor" style={{ maxWidth: "600px", margin: "0 auto" }}>
+          
+          {/* Assignment Name */}
+          <label htmlFor="wd-name" className="mb-2"><b>Assignment Name</b></label>
+          <br />
+          <input id="wd-name" className="form-control" defaultValue={assignment.title} />
+          <br />
+
+          {/* Description */}
+          <textarea id="wd-description" rows={10} className="form-control" defaultValue={assignment.description}></textarea>
+          <br />
+
+          {/* Main Details Table */}
+          <table className="table">
+              <tbody>
+                  {/* Points */}
+                  <tr>
+                      <td align="right" valign="top"><label htmlFor="wd-points">Points</label></td>
+                      <td><input id="wd-points" type="number" className="form-control" defaultValue={assignment.points} /></td>
+                  </tr>
+                  
+                  {/* Assignment Group (FIXED) */}
+                  <tr>
+                      <td align="right" valign="top"><label htmlFor="wd-group">Assignment Group</label></td>
+                      <td>
+                          {/* FIX: Set defaultValue on the <select> tag */}
+                          <select id="wd-group" className="form-control" defaultValue={assignment.group_name || 'ASSIGNMENTS'}>
+                              <option value="ASSIGNMENTS">ASSIGNMENTS</option>
+                              <option value="QUIZZES">QUIZZES</option>
+                              <option value="EXAMS">EXAMS</option>
+                          </select>
+                      </td>
+                  </tr>
+                  
+                  {/* Display Grade as (FIXED - using defaultValue) */}
+                  <tr>
+                      <td align="right" valign="top"><label htmlFor="wd-display-grade-as">Display Grade as</label></td>
+                      <td>
+                          <select id="wd-display-grade-as" className="form-control" defaultValue="Percentage">
+                              <option value="Percentage">Percentage</option>
+                              <option value="Points">Points</option>
+                          </select>
+                      </td>
+                  </tr>
+                  
+                  {/* Submission Type (FIXED - using defaultValue) */}
+                  <tr>
+                      <td align="right" valign="top"><label htmlFor="wd-submission-type">Submission Type</label></td>
+                      <td className="border p-3">
+                          <select id="wd-select-submission-type" className="form-select" defaultValue={assignment.submission_type || 'Online'}>
+                              <option value="ONLINE">Online</option>
+                              <option value="IN_PERSON">In-person</option>
+                              <option value="No Submission">No Submission</option>
+                          </select>
+                          <p></p>
+                          {/* Checkbox options remain static */}
+                          <div id="wd-online-options">
+                              <label>Online Entry Options:</label><br />
+                              <div className="form-check"><input type="checkbox" id="wd-chkbox-text" className="form-check-input" /><label htmlFor="wd-chkbox-text" className="form-check-label"> Text Entry</label></div>
+                              <div className="form-check"><input type="checkbox" id="wd-chkbox-website" className="form-check-input" /><label htmlFor="wd-chkbox-website" className="form-check-label"> Website URL</label></div>
+                              <div className="form-check"><input type="checkbox" id="wd-chkbox-recordings" className="form-check-input" /><label htmlFor="wd-chkbox-recordings" className="form-check-label"> Media Recordings</label></div>
+                              <div className="form-check"><input type="checkbox" id="wd-chkbox-annotations" className="form-check-input" /><label htmlFor="wd-chkbox-annotations" className="form-check-label"> Student Annotations</label></div>
+                              <div className="form-check"><input type="checkbox" id="wd-chkbox-uploads" className="form-check-input" /><label htmlFor="wd-chkbox-uploads" className="form-check-label"> File Uploads</label></div>
+                          </div>
+                      </td>
+                  </tr>
+                  
+                  {/* Assign / Dates */}
+                  <tr>
+                      <td align="right" valign="top"><label htmlFor="wd-assign-to">Assign</label></td>
+                      <td className="border p-3">
+                          Assign to<br /><input id="wd-assign-to" className="form-control" defaultValue="Everyone" /><br />
+                          Due<br />
+                          <input id="wd-due-date" type="date" className="form-control" defaultValue={assignment.due_date} /><br />
+                          
+                          <table>
+                              <tbody>
+                                  <tr><td>Available from</td><td>Until</td></tr>
+                                  <tr>
+                                      <td><input id="wd-available-from" type="date" className="form-control" defaultValue={assignment.available_date} /></td>
+                                      <td><input id="wd-available-until" type="date" className="form-control" defaultValue="" /></td>
+                                  </tr>
+                              </tbody>
+                          </table>
+                      </td>
+                  </tr>
+                  
+                  {/* Save/Cancel Buttons (FIXED: Using correct Next.js Link syntax) */}
+                  <tr>
+                      <td colSpan={2} align="right">
+                          <div className="d-flex justify-content-end pt-3">
+                              {/* CANCEL Button */}
+                              <Link href={assignmentsPath} passHref>
+                                  <button type="button" className="btn btn-secondary me-2" id="wd-cancel">Cancel</button>
+                              </Link>
+                              {/* SAVE Button */}
+                              <Link href={assignmentsPath} passHref>
+                                  <button type="submit" className="btn btn-danger" id="wd-save">Save</button>
+                              </Link>
+                          </div>
+                      </td>
+                  </tr>
+              </tbody>
+          </table>
+      </form>
     </div>
   );
 }

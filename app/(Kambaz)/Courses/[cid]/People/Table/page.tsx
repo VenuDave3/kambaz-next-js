@@ -1,10 +1,46 @@
 'use client';
-import { Table } from 'react-bootstrap';
-import { FaUserCircle } from 'react-icons/fa';
+import { useParams } from "next/navigation"; // Hook to get URL parameters (cid)
+import { users, enrollments } from "../../../../Database"; // Import data arrays
+import React from "react";
+import { FaUserCircle } from "react-icons/fa";
+import { Table } from "react-bootstrap";
+import { InputGroup, FormControl, Button } from "react-bootstrap"; // Controls for better UX (optional, but good practice)
+import { FaSearch } from "react-icons/fa";
+
+// Define interfaces for type safety (matching your database structure)
+interface User { 
+  _id: string; 
+  firstName: string; 
+  lastName: string; 
+  loginId: string; 
+  role: string; 
+  section: string; 
+  lastActivity: string; 
+  totalActivity: string; 
+}
+interface Enrollment { _id: string; user: string; course: string; }
 
 export default function PeopleTable() {
+  // 1. Get the current Course ID from the URL
+  const { cid } = useParams();
+  
+  // 2. Safely cast the imported data arrays
+  const userList: User[] = users as User[];
+  const enrollmentList: Enrollment[] = enrollments as Enrollment[];
+
   return (
     <div id="wd-people-table" className="p-2">
+      <h3>People</h3>
+
+      {/* People Controls (Adapted to your existing structure) */}
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <InputGroup className="w-25">
+          <InputGroup.Text><FaSearch /></InputGroup.Text>
+          <FormControl placeholder="Search people" />
+        </InputGroup>
+        <Button variant="secondary"> + Group </Button>
+      </div>
+
       <Table striped hover responsive>
         <thead>
           <tr>
@@ -17,61 +53,29 @@ export default function PeopleTable() {
           </tr>
         </thead>
         <tbody>
-          {/* Tony Stark */}
-          <tr>
-            <td className="wd-full-name text-nowrap">
-              <FaUserCircle className="me-2 fs-1 text-secondary" />
-              <span className="wd-first-name">Tony</span>{' '}
-              <span className="wd-last-name">Stark</span>
-            </td>
-            <td className="wd-login-id">001234561S</td>
-            <td className="wd-section">S101</td>
-            <td className="wd-role">STUDENT</td>
-            <td className="wd-last-activity">2020-10-01</td>
-            <td className="wd-total-activity">10:21:32</td>
-          </tr>
-
-          {/* Bruce Wayne */}
-          <tr>
-            <td className="wd-full-name text-nowrap">
-              <FaUserCircle className="me-2 fs-1 text-secondary" />
-              <span className="wd-first-name">Bruce</span>{' '}
-              <span className="wd-last-name">Wayne</span>
-            </td>
-            <td className="wd-login-id">001234562B</td>
-            <td className="wd-section">S101</td>
-            <td className="wd-role">STUDENT</td>
-            <td className="wd-last-activity">2020-10-08</td>
-            <td className="wd-total-activity">08:12:03</td>
-          </tr>
-
-          {/* Steve Rogers */}
-          <tr>
-            <td className="wd-full-name text-nowrap">
-              <FaUserCircle className="me-2 fs-1 text-secondary" />
-              <span className="wd-first-name">Steve</span>{' '}
-              <span className="wd-last-name">Rogers</span>
-            </td>
-            <td className="wd-login-id">001234563R</td>
-            <td className="wd-section">S102</td>
-            <td className="wd-role">TA</td>
-            <td className="wd-last-activity">2020-10-12</td>
-            <td className="wd-total-activity">05:44:51</td>
-          </tr>
-
-          {/* Natasha Romanoff */}
-          <tr>
-            <td className="wd-full-name text-nowrap">
-              <FaUserCircle className="me-2 fs-1 text-secondary" />
-              <span className="wd-first-name">Natasha</span>{' '}
-              <span className="wd-last-name">Romanoff</span>
-            </td>
-            <td className="wd-login-id">001234564N</td>
-            <td className="wd-section">S102</td>
-            <td className="wd-role">INSTRUCTOR</td>
-            <td className="wd-last-activity">2020-10-15</td>
-            <td className="wd-total-activity">22:09:18</td>
-          </tr>
+          {/* REPLACING STATIC ROWS WITH DYNAMIC FILTERING */}
+          {userList
+            .filter((usr: User) =>
+              // FILTER LOGIC: Find users whose ID is present in an enrollment record 
+              // that matches the current Course ID (cid).
+              enrollmentList.some((enrollment: Enrollment) => 
+                enrollment.user === usr._id && enrollment.course === cid
+              )
+            )
+            .map((user: User) => (
+              <tr key={user._id}>
+                <td className="wd-full-name text-nowrap">
+                  <FaUserCircle className="me-2 fs-1 text-secondary" />
+                  <span className="wd-first-name">{user.firstName}</span>
+                  <span className="wd-last-name"> {user.lastName}</span>
+                </td>
+                <td className="wd-login-id">{user.loginId}</td>
+                <td className="wd-section">{user.section}</td>
+                <td className="wd-role">{user.role}</td>
+                <td className="wd-last-activity">{user.lastActivity}</td>
+                <td className="wd-total-activity">{user.totalActivity}</td>
+              </tr>
+            ))}
         </tbody>
       </Table>
     </div>

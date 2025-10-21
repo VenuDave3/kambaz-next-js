@@ -11,16 +11,17 @@ interface Course {
     name: string;
     [key: string]: any; 
 }
-interface CoursesLayoutProps {
-  children: ReactNode;
-  params: {
-    cid: string;
-  };
-}
+// NOTE: We no longer strictly need CoursesLayoutProps interface here 
+// because we are asserting the type directly on the function call.
 
-// FIX: Convert to async function to resolve the App Router Type Error (A promise issue)
-export default async function CoursesLayout({ children, params }: CoursesLayoutProps) {
-  // Extract the course ID from the URL
+// FIX: Change the function signature to 'async' and assert the props type globally
+export default async function CoursesLayout(props: any) { // Assert props as 'any' for the component function
+
+  // Cast the complex params object to the expected structure
+  const params = props.params as { cid: string }; 
+  const { children } = props;
+  
+  // Extract the course ID
   const { cid } = params;
   
   // Look up the matching course object

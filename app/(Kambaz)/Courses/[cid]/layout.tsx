@@ -2,17 +2,13 @@
 import { FaAlignJustify } from "react-icons/fa6";
 import { courses } from "../../Database"; 
 import React, { ReactNode } from 'react';
-// 1. ADD: Import the CourseNavigation component (from 3.8.5)
 import CourseNavigation from './Navigation'; 
-// 2. ADD: Import the Breadcrumb component (from 3.8.6)
 import Breadcrumb from './Breadcrumb'; 
 
 
-// NOTE: You must STILL define the interfaces for type safety
 interface Course {
     _id: string;
     name: string;
-    // FIX: Safely allow extra keys for the database object
     [key: string]: any; 
 }
 interface CoursesLayoutProps {
@@ -22,8 +18,8 @@ interface CoursesLayoutProps {
   };
 }
 
-// THIS IS THE CORE 3.8.4 LOGIC
-export default function CoursesLayout({ children, params }: CoursesLayoutProps) {
+// FIX: Convert to async function to resolve the App Router Type Error (A promise issue)
+export default async function CoursesLayout({ children, params }: CoursesLayoutProps) {
   // Extract the course ID from the URL
   const { cid } = params;
   

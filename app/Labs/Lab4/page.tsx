@@ -1,5 +1,4 @@
 "use client"
-
 // 1. Import all the components you have made so far
 import ClickEvent from "./ClickEvent";
 import PassingDataOnEvent from "./PassingDataOnEvent";

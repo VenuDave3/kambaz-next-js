@@ -1,11 +1,15 @@
 /* eslint-disable */
-
 'use client';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation'; // 1. Import useRouter
 import Link from 'next/link';
-import { assignments } from "../../../../Database"; 
-import React from 'react';
+import React, { useRef } from 'react'; // 2. Import useRef
 import { FaEllipsisV } from "react-icons/fa";
+
+// --- NEW REDUX IMPORTS ---
+import { useSelector, useDispatch } from 'react-redux';
+// 3. Import actions from the reducer (using the textbook's path)
+import { addAssignment, updateAssignment } from "../reducer";
+// --- END NEW IMPORTS ---
 
 // Define the interface for Assignment
 interface Assignment {
@@ -22,24 +26,65 @@ interface Assignment {
     [key: string]: any;
 }
 
-// NOTE: The 'renderOption' function is removed to fix the error.
-
 export default function AssignmentEditor() {
   const { cid, aid } = useParams(); 
+  const router = useRouter(); // 4. Get router to navigate
+  const dispatch = useDispatch();
 
-  const assignmentList: Assignment[] = assignments as Assignment[];
-  const assignment = assignmentList.find((a) => a._id === aid);
+  // 5. Get assignments list from Redux (using "cheat")
+  const { assignments } = useSelector((state: any) => state.assignmentReducer);
+
+  // 6. Find the assignment to edit. 'New' is the keyword.
+  const assignment = aid !== "New" ? assignments.find((a: any) => a._id === aid) : null;
   
-  const assignmentsPath = `/Courses/${cid}/Assignments`;
+  // 7. Create refs for ALL form fields (like your friend's code)
+  const nameRef = useRef<HTMLInputElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const pointsRef = useRef<HTMLInputElement>(null);
+  const groupRef = useRef<HTMLSelectElement>(null);
+  const gradeAsRef = useRef<HTMLSelectElement>(null);
+  const submissionTypeRef = useRef<HTMLSelectElement>(null);
+  const dueRef = useRef<HTMLInputElement>(null);
+  const availableFromRef = useRef<HTMLInputElement>(null);
+  const availableUntilRef = useRef<HTMLInputElement>(null);
 
-  if (!assignment) {
-    return <div id="wd-assignment-editor" className="p-3">Assignment Not Found (ID: {aid})</div>;
-  }
+  // 8. This handles the Save button
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault(); // Stop the form from reloading the page
+    
+    // Collect all data from refs
+    const newAssignmentData = {
+      _id: aid === "New" ? new Date().getTime().toString() : aid,
+      title: nameRef.current?.value,
+      description: descriptionRef.current?.value,
+      points: pointsRef.current?.value,
+      group_name: groupRef.current?.value,
+      // submission_type: submissionTypeRef.current?.value, // You can add all fields
+      due_date: dueRef.current?.value,
+      available_date: availableFromRef.current?.value,
+      until_date: availableUntilRef.current?.value,
+      course: cid,
+    };
+
+    // Dispatch the correct action
+    if (aid === "New") {
+      dispatch(addAssignment(newAssignmentData));
+    } else {
+      dispatch(updateAssignment(newAssignmentData));
+    }
+    router.push(`/Courses/${cid}/Assignments`);
+  };
+
+  // 9. This handles the Cancel button
+  const handleCancel = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push(`/Courses/${cid}/Assignments`);
+  };
 
   return (
     <div id="wd-assignments-editor" className="p-3">
       
-      {/* Header and Controls */}
+      {/* Header and Controls (Your layout is unchanged) */}
       <div className="d-flex justify-content-end align-items-center mb-4">
         <div className="text-success fw-bold me-3">Published</div>
         <button type="button" className="btn btn-secondary me-2">
@@ -48,33 +93,53 @@ export default function AssignmentEditor() {
       </div>
       <hr />
 
-      <form action="#" className="assignment-editor" style={{ maxWidth: "600px", margin: "0 auto" }}>
+      {/* 10. Form tag is updated to use onSubmit */}
+      <form onSubmit={handleSave} className="assignment-editor" style={{ maxWidth: "600px", margin: "0 auto" }}>
           
-          {/* Assignment Name */}
           <label htmlFor="wd-name" className="mb-2"><b>Assignment Name</b></label>
           <br />
-          <input id="wd-name" className="form-control" defaultValue={assignment.title} />
+          {/* 11. All fields now have a 'ref' and smart 'defaultValue' */}
+          <input 
+            id="wd-name" 
+            className="form-control" 
+            defaultValue={assignment ? assignment.title : "New Assignment"}
+            ref={nameRef}
+          />
           <br />
 
-          {/* Description */}
-          <textarea id="wd-description" rows={10} className="form-control" defaultValue={assignment.description}></textarea>
+          <textarea 
+            id="wd-description" 
+            rows={10} 
+            className="form-control" 
+            defaultValue={assignment ? assignment.description : "New Description"}
+            ref={descriptionRef}
+          ></textarea>
           <br />
 
-          {/* Main Details Table */}
           <table className="table">
               <tbody>
-                  {/* Points */}
                   <tr>
                       <td align="right" valign="top"><label htmlFor="wd-points">Points</label></td>
-                      <td><input id="wd-points" type="number" className="form-control" defaultValue={assignment.points} /></td>
+                      <td>
+                        <input 
+                          id="wd-points" 
+                          type="number" 
+                          className="form-control" 
+                          defaultValue={assignment ? assignment.points : 100}
+                          ref={pointsRef}
+                        />
+                      </td>
                   </tr>
                   
-                  {/* Assignment Group (FIXED) */}
                   <tr>
                       <td align="right" valign="top"><label htmlFor="wd-group">Assignment Group</label></td>
                       <td>
-                          {/* FIX: Set defaultValue on the <select> tag */}
-                          <select id="wd-group" className="form-control" defaultValue={assignment.group_name || 'ASSIGNMENTS'}>
+                          <select 
+                            id="wd-group" 
+                            className="form-control" 
+                            defaultValue={assignment ? assignment.group_name : 'ASSIGNMENTS'}
+                            ref={groupRef}
+                          >
                               <option value="ASSIGNMENTS">ASSIGNMENTS</option>
                               <option value="QUIZZES">QUIZZES</option>
                               <option value="EXAMS">EXAMS</option>
@@ -82,28 +147,36 @@ export default function AssignmentEditor() {
                       </td>
                   </tr>
                   
-                  {/* Display Grade as (FIXED - using defaultValue) */}
                   <tr>
                       <td align="right" valign="top"><label htmlFor="wd-display-grade-as">Display Grade as</label></td>
                       <td>
-                          <select id="wd-display-grade-as" className="form-control" defaultValue="Percentage">
+                          <select 
+                            id="wd-display-grade-as" 
+                            className="form-control" 
+                            defaultValue={assignment ? assignment.display_grade_as : "Percentage"}
+                            ref={gradeAsRef}
+                          >
                               <option value="Percentage">Percentage</option>
                               <option value="Points">Points</option>
                           </select>
                       </td>
                   </tr>
                   
-                  {/* Submission Type (FIXED - using defaultValue) */}
                   <tr>
                       <td align="right" valign="top"><label htmlFor="wd-submission-type">Submission Type</label></td>
                       <td className="border p-3">
-                          <select id="wd-select-submission-type" className="form-select" defaultValue={assignment.submission_type || 'Online'}>
+                          <select 
+                            id="wd-select-submission-type" 
+                            className="form-select" 
+                            defaultValue={assignment ? assignment.submission_type : 'Online'}
+                            ref={submissionTypeRef}
+                          >
                               <option value="ONLINE">Online</option>
                               <option value="IN_PERSON">In-person</option>
                               <option value="No Submission">No Submission</option>
                           </select>
                           <p></p>
-                          {/* Checkbox options remain static */}
+                          {/* ... (Checkboxes are unchanged) ... */}
                           <div id="wd-online-options">
                               <label>Online Entry Options:</label><br />
                               <div className="form-check"><input type="checkbox" id="wd-chkbox-text" className="form-check-input" /><label htmlFor="wd-chkbox-text" className="form-check-label"> Text Entry</label></div>
@@ -115,38 +188,57 @@ export default function AssignmentEditor() {
                       </td>
                   </tr>
                   
-                  {/* Assign / Dates */}
                   <tr>
                       <td align="right" valign="top"><label htmlFor="wd-assign-to">Assign</label></td>
                       <td className="border p-3">
                           Assign to<br /><input id="wd-assign-to" className="form-control" defaultValue="Everyone" /><br />
                           Due<br />
-                          <input id="wd-due-date" type="date" className="form-control" defaultValue={assignment.due_date} /><br />
+                          <input 
+                            id="wd-due-date" 
+                            type="date" 
+                            className="form-control" 
+                            defaultValue={assignment ? assignment.due_date : ""}
+                            ref={dueRef}
+                          /><br />
                           
                           <table>
                               <tbody>
                                   <tr><td>Available from</td><td>Until</td></tr>
                                   <tr>
-                                      <td><input id="wd-available-from" type="date" className="form-control" defaultValue={assignment.available_date} /></td>
-                                      <td><input id="wd-available-until" type="date" className="form-control" defaultValue="" /></td>
+                                      <td>
+                                        <input 
+                                          id="wd-available-from" 
+                                          type="date" 
+                                          className="form-control" 
+                                          defaultValue={assignment ? assignment.available_date : ""}
+                                          ref={availableFromRef}
+                                        />
+                                      </td>
+                                      <td>
+                                        <input 
+                                          id="wd-available-until" 
+                                          type="date" 
+                                          className="form-control" 
+                                          defaultValue={assignment ? assignment.until_date : ""}
+                                          ref={availableUntilRef}
+                                        />
+                                      </td>
                                   </tr>
                               </tbody>
                           </table>
                       </td>
                   </tr>
                   
-                  {/* Save/Cancel Buttons (FIXED: Using correct Next.js Link syntax) */}
+                  {/* 12. Save/Cancel buttons are now REAL buttons */}
                   <tr>
                       <td colSpan={2} align="right">
                           <div className="d-flex justify-content-end pt-3">
-                              {/* CANCEL Button */}
-                              <Link href={assignmentsPath} passHref>
-                                  <button type="button" className="btn btn-secondary me-2" id="wd-cancel">Cancel</button>
-                              </Link>
-                              {/* SAVE Button */}
-                              <Link href={assignmentsPath} passHref>
-                                  <button type="submit" className="btn btn-danger" id="wd-save">Save</button>
-                              </Link>
+                              <button type="button" className="btn btn-secondary me-2" id="wd-cancel" onClick={handleCancel}>
+                                Cancel
+                              </button>
+                              <button type="submit" className="btn btn-danger" id="wd-save">
+                                Save
+                              </button>
                           </div>
                       </td>
                   </tr>

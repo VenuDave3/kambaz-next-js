@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 import Link from 'next/link';
 import {
@@ -7,17 +8,24 @@ import {
   ListGroup,
   ListGroupItem,
   Badge,
+  Modal, // 1. Import Modal
 } from 'react-bootstrap';
 import { IoSearchOutline, IoEllipsisVertical } from 'react-icons/io5';
 import { FaPlus } from 'react-icons/fa6';
-import { FaCheckCircle } from 'react-icons/fa';
+import { FaCheckCircle, FaTrash } from 'react-icons/fa';
 import { BsGripVertical } from 'react-icons/bs';
 import { HiOutlineDocumentText } from 'react-icons/hi';
 import { useParams } from "next/navigation";
-import { assignments } from "../../../Database"; 
+import { useState } from "react"; // 2. Import useState
+
+// --- NEW REDUX IMPORTS ---
+import { useSelector, useDispatch } from "react-redux";
+// 3. Use the textbook's path (as you requested)
+import { deleteAssignment } from "./reducer"; 
+// --- END REDUX IMPORTS ---
 
 
-// Interface to type the assignment data (based on your JSON fields)
+// Interface to type the assignment data
 interface Assignment {
     _id: string;
     title: string;
@@ -29,10 +37,10 @@ interface Assignment {
     group_name: string;
 }
 
-// Group the assignments by group_name for rendering
+// Group the assignments by group_name for rendering (Unchanged)
 const groupAssignments = (assignments: Assignment[]) => {
     return assignments.reduce((groups, assignment) => {
-        const group = assignment.group_name || 'Assignments'; // Default group
+        const group = assignment.group_name || 'Assignments';
         if (!groups[group]) {
             groups[group] = [];
         }
@@ -43,23 +51,50 @@ const groupAssignments = (assignments: Assignment[]) => {
 
 
 export default function AssignmentsPage() {
-  const { cid } = useParams(); // Get current Course ID
+  const { cid } = useParams();
+  const dispatch = useDispatch();
 
-  // 1. Filter the global list to get only assignments for the current course
+  // --- THIS IS THE FIX ---
+  // Removed the 's'. It's now 'assignmentReducer' to match your store.
+  const { assignments } = useSelector((state: any) => state.assignmentReducer);
+  // --- END FIX ---
+
+  // Add state for the delete modal
+  const [showDelete, setShowDelete] = useState(false);
+  const [assignmentToDelete, setAssignmentToDelete] = useState<any>(null);
+
+  // Filter the Redux list
   const courseAssignments = (assignments as Assignment[]).filter(
     (assignment) => assignment.course === cid
   );
 
-  // 2. Group the filtered assignments (e.g., into 'Quizzes', 'Exams', 'Projects')
+  // Group the filtered assignments
   const assignmentGroups = groupAssignments(courseAssignments);
+  
+  // modal handler functions
+  const handleAskDelete = (assignment: any) => {
+    setAssignmentToDelete(assignment);
+    setShowDelete(true);
+  };
+  const handleCancelDelete = () => {
+    setShowDelete(false);
+    setAssignmentToDelete(null);
+  };
+  const handleConfirmDelete = () => {
+    if (assignmentToDelete?._id) {
+      dispatch(deleteAssignment(assignmentToDelete._id));
+    }
+    setShowDelete(false);
+    setAssignmentToDelete(null);
+  };
 
   return (
     <div id="wd-assignments" className="p-3">
       <div className="wd-assignments-container mx-auto">
         
-        {/* Toolbar (Static, remains the same) */}
+        {/* Toolbar */}
         <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-          {/* search (left) */}
+          {/* ... search bar ... */}
           <div style={{ maxWidth: 420 }} className="flex-grow-1">
             <InputGroup>
               <InputGroup.Text>
@@ -68,18 +103,23 @@ export default function AssignmentsPage() {
               <FormControl id="wd-assignments-search" placeholder="Search for Assignment" />
             </InputGroup>
           </div>
-          {/* actions (right) */}
+          
           <div className="d-flex align-items-center gap-2">
             <Button id="wd-add-group-btn" variant="secondary" size="lg"> <FaPlus className="me-2" /> Group </Button>
-            <Button id="wd-add-assignment-btn" variant="danger" size="lg"> <FaPlus className="me-2" /> Assignment </Button>
+            
+            {/* This is the link to the editor page (for 4.4.5.2) */}
+            <Link href={`/Courses/${cid}/Assignments/New`}
+              id="wd-add-assignment-btn" 
+              className="btn btn-danger btn-lg">
+              <FaPlus className="me-2" /> Assignment 
+            </Link>
+            
             <Button variant="light" size="lg" className="border"> <IoEllipsisVertical /> </Button>
           </div>
         </div>
 
         {/* Dynamic Assignment Groups */}
         <ListGroup className="rounded-0">
-          
-          {/* MAP OVER THE DYNAMIC GROUPS */}
           {Object.keys(assignmentGroups).map((groupName) => {
             const groupList = assignmentGroups[groupName];
             return (
@@ -87,13 +127,12 @@ export default function AssignmentsPage() {
                 key={groupName} 
                 className="p-0 mb-4 fs-5 border-gray wd-assignments-group"
               >
-                {/* Group Header Bar - Using dynamic groupName */}
+                {/* ... (Group Header Bar is unchanged) ... */}
                 <div className="group-header p-3 ps-2 bg-secondary d-flex align-items-center">
                   <BsGripVertical className="me-2 fs-3" />
                   <span className="fw-semibold text-uppercase">{groupName}</span>
-
+                  {/* ... (rest of header is unchanged) ... */}
                   <div className="ms-auto d-flex align-items-center gap-2">
-                    {/* Only show badge for the main group (optional logic) */}
                     {groupName === 'Assignments' && ( 
                       <Badge bg="light" text="dark" className="px-3 py-2 fw-normal">
                         40% of Total
@@ -106,7 +145,6 @@ export default function AssignmentsPage() {
 
                 {/* Assignment Items within the group */}
                 <ListGroup className="rounded-0">
-                  {/* MAP OVER ASSIGNMENTS WITHIN THE CURRENT GROUP */}
                   {groupList.map((assignment) => (
                     <ListGroupItem key={assignment._id} className="wd-assignment p-3 ps-2">
                       <div className="d-flex align-items-start gap-2">
@@ -114,16 +152,15 @@ export default function AssignmentsPage() {
                         <div className="mt-1">
                           <HiOutlineDocumentText className="text-success fs-4" />
                         </div>
-
                         <div className="flex-fill">
+                          {/* This is the link to the editor page (for 4.4.5.3) */}
                           <Link
-                            // DYNAMIC LINK: Encode both CID and Assignment ID (aid)
                             href={`/Courses/${cid}/Assignments/${assignment._id}`} 
                             className="wd-assignment-title text-decoration-none text-dark"
                           >
                             {assignment.title}
                           </Link>
-
+                          {/* ... (rest of assignment details are unchanged) ... */}
                           <div className="wd-assignment-line1">
                             <span className="wd-assign-type">Multiple Modules</span>
                             <span className="mx-2 text-muted">|</span>
@@ -142,6 +179,12 @@ export default function AssignmentsPage() {
                         </div>
 
                         <div className="wd-assign-right-controls text-muted">
+                          {/* This is the delete button (for 4.4.5.4) */}
+                          <FaTrash 
+                            className="text-danger me-2" 
+                            style={{ cursor: "pointer" }}
+                            onClick={() => handleAskDelete(assignment)} 
+                          />
                           <FaCheckCircle className="text-success me-2" />
                           <IoEllipsisVertical className="fs-5" />
                         </div>
@@ -154,6 +197,32 @@ export default function AssignmentsPage() {
           })}
         </ListGroup>
       </div>
+
+      {/* This is the modal for the delete button */}
+      <Modal show={showDelete} onHide={handleCancelDelete} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete assignment</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {assignmentToDelete ? (
+            <>
+              Are you sure you want to delete{" "}
+              <strong>{assignmentToDelete.title}</strong>?
+            </>
+          ) : (
+            "Are you sure you want to delete this assignment?"
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCancelDelete}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleConfirmDelete}>
+            Delete
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
     </div>
   );
 }

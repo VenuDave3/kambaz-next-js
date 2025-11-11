@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react'; // 1. Import useState
 import {
   Button,
   Dropdown,
@@ -8,15 +9,28 @@ import {
 } from 'react-bootstrap';
 import { FaPlus } from 'react-icons/fa6';
 import GreenCheckmark from './GreenCheckmark';
+import ModuleEditor from './ModuleEditor'; // 2. Import the new ModuleEditor
 
-export default function ModulesControls() {
+// 3. Define the new props we need to accept from page.tsx
+export default function ModulesControls({ moduleName, setModuleName, addModule }: {
+  moduleName: string;
+  setModuleName: (title: string) => void;
+  addModule: () => void;
+}) {
+
+  // 4. Add the state to show/hide the modal
+  const [show, setShow] = useState(false);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
+
   return (
-    <div id="wd-modules-controls" className="text-nowrap clearfix">
+    <div id="wd-modules-controls" className="text-nowrap clearfix mb-3"> {/* Added mb-3 for spacing */}
       <Button
         variant="danger"
         size="lg"
         className="me-1 float-end"
         id="wd-add-module-btn"
+        onClick={handleShow} // 5. Changed this to open the modal
       >
         <FaPlus className="position-relative me-2" style={{ bottom: '1px' }} />
         Module
@@ -30,16 +44,7 @@ export default function ModulesControls() {
           <DropdownItem id="wd-publish-all">
             <GreenCheckmark /> Publish All
           </DropdownItem>
-          <DropdownItem id="wd-publish-all-modules-and-items">
-            <GreenCheckmark /> Publish all modules and items
-          </DropdownItem>
-          <DropdownItem id="wd-publish-modules-only">
-            <GreenCheckmark /> Publish modules only
-          </DropdownItem>
-          {/* Required extra items */}
-          <DropdownItem id="wd-unpublish-all-modules-and-items">
-            Unpublish all modules and items
-          </DropdownItem>
+          {/* ... other dropdown items ... */}
           <DropdownItem id="wd-unpublish-modules-only">
             Unpublish modules only
           </DropdownItem>
@@ -63,6 +68,16 @@ export default function ModulesControls() {
       >
         Collapse All
       </Button>
+
+      {/* 6. Add the ModuleEditor, linked to our state */}
+      <ModuleEditor 
+        show={show} 
+        handleClose={handleClose} 
+        dialogTitle="Add Module"
+        moduleName={moduleName} 
+        setModuleName={setModuleName} 
+        addModule={addModule} 
+      />
     </div>
   );
 }

@@ -1,55 +1,97 @@
+/* eslint-disable */
 "use client"
 import { useParams } from "next/navigation";
-import { modules } from "../../../Database"; // Import the modules array
-import React from 'react';
-import { BsGripVertical } from "react-icons/bs"; // For the drag handle icon
-import { ListGroup, ListGroupItem, Button } from 'react-bootstrap'; // Import UI components
-// NOTE: Ensure these imports match your actual control button component names
+import React, { useState } from 'react';
+import { BsGripVertical } from "react-icons/bs"; 
+import { ListGroup, ListGroupItem, FormControl } from 'react-bootstrap'; // 1. Import FormControl
 import LessonControlButtons from './LessonControlButtons'; 
-import ModuleControlButtons from './ModuleControlButtons'; 
+import ModuleControlButtons from './ModuleControlButtons';
+import ModulesControls from "./ModulesControls";
 
-// Define interfaces for type safety (avoids the "module: any" warning)
+// --- NEW REDUX IMPORTS ---
+import { addModule, editModule, updateModule, deleteModule } from "./reducer";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "../../../store";
+// --- END REDUX IMPORTS ---
+
+// Define interfaces
 interface Lesson { _id: string; name: string; description: string; module: string; }
-interface Module { _id: string; name: string; description: string; course: string; lessons?: Lesson[]; }
+interface Module { _id: string; name: string; description: string; course: string; lessons?: Lesson[]; editing?: boolean; }
 
 export default function Modules() {
-  // 1. Retrieve the current Course ID (cid) from the URL
   const { cid } = useParams();
   
-  // 2. Filter the global modules list by the current course ID
-  const courseModules = (modules as Module[]).filter(
-    (module) => module.course === cid
-  );
+  // --- REDUX STATE & DISPATCH ---
+  const { modules } = useSelector((state: RootState) => state.modulesReducer);
+  const dispatch = useDispatch();
+  // --- END REDUX STATE & DISPATCH ---
+
+  // We still keep 'moduleName' in local state for the *add* form
+  const [moduleName, setModuleName] = useState("");
+
+  // All local functions (addModule, deleteModule) are GONE.
+  // We will dispatch actions directly.
 
   return (
     <div id="wd-modules-screen">
       
-      {/* Module controls (Using standard Bootstrap buttons for simplicity) */}
-      <div className="d-flex justify-content-end mb-3">
-          <Button variant="secondary" className="me-1">Collapse All</Button>
-          <Button variant="secondary" className="me-1">View Progress</Button>
-          <Button variant="secondary" className="me-1">Publish All</Button>
-          <Button variant="danger">+</Button>
-          <Button variant="secondary" className="ms-1">...</Button>
-      </div>
+      {/* Pass Redux-dispatching functions to the controls */}
+      <ModulesControls 
+        moduleName={moduleName} 
+        setModuleName={setModuleName} 
+        addModule={() => {
+          dispatch(addModule({ name: moduleName, course: cid }));
+          setModuleName("");
+        }} 
+      />
 
       <ListGroup id="wd-modules" className="rounded-0">
         
-        {/* 3. DYNAMIC RENDERING: Map over the filtered course modules */}
-        {courseModules.map((module: Module) => (
+        {/* Filter and map over the modules from the REDUX store */}
+        {modules
+          .filter((module: any) => module.course === cid)
+          .map((module: Module) => (
           <ListGroupItem key={module._id} className="wd-module p-0 mb-5 fs-5 border-gray">
             
-            {/* Module Title/Header */}
             <div className="wd-title p-3 ps-2 bg-secondary">
-              <BsGripVertical className="me-2 fs-3" /> {module.name} <ModuleControlButtons />
+              <BsGripVertical className="me-2 fs-3" />
+              
+              {/* --- IN-LINE EDITING LOGIC (from 4.4.3.3) --- */}
+              {!module.editing && module.name}
+              { module.editing && (
+                <FormControl 
+                  className="w-50 d-inline-block"
+                  defaultValue={module.name}
+                  onChange={(e) =>
+                    // Dispatch update on every key stroke
+                    dispatch(
+                      updateModule({ ...module, name: e.target.value })
+                    )
+                  }
+                  onKeyDown={(e) => {
+                    // Dispatch update (to set editing: false) on Enter
+                    if (e.key === "Enter") {
+                      dispatch(updateModule({ ...module, editing: false }));
+                    }
+                  }}
+                />
+              )}
+              {/* --- END IN-LINE EDITING LOGIC --- */}
+
+              {/* Pass Redux-dispatching functions to the buttons */}
+              <ModuleControlButtons 
+                moduleId={module._id}
+                deleteModule={(moduleId) => dispatch(deleteModule(moduleId))}
+                editModule={(moduleId) => dispatch(editModule(moduleId))}
+              /> 
             </div>
             
-            {/* NESTED LESSONS: Render only if the module has lessons array */}
             {module.lessons && (
               <ListGroup className="wd-lessons rounded-0">
                 {module.lessons.map((lesson: Lesson) => (
                   <ListGroupItem key={lesson._id} className="wd-lesson p-3 ps-1">
-                    <BsGripVertical className="me-2 fs-3" /> {lesson.name} <LessonControlButtons />
+                    <BsGripVertical className="me-2 fs-3" /> {lesson.name} 
+                    <LessonControlButtons />
                   </ListGroupItem>
                 ))}
               </ListGroup>

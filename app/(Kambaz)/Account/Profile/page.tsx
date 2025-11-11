@@ -1,8 +1,34 @@
+/* eslint-disable */
 "use client";
 import Link from "next/link";
 import { Form, FormControl, Button, Card } from "react-bootstrap";
+import { redirect } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { setCurrentUser } from "../reducer";
+import { RootState } from "../../store";
 
 export default function Profile() {
+  const [profile, setProfile] = useState<any>({});
+  const dispatch = useDispatch();
+  const { currentUser } = useSelector((state: RootState) => state.accountReducer);
+
+  const fetchProfile = () => {
+    if (!currentUser) {
+      return redirect("/Kambaz/Account/Signin");
+    }
+    setProfile(currentUser);
+  };
+
+  const signout = () => {
+    dispatch(setCurrentUser(null));
+    redirect("/Kambaz/Account/Signin");
+  };
+
+  useEffect(() => {
+    fetchProfile();
+  }, [currentUser]); // Run this if currentUser changes
+
   return (
     <div id="wd-profile-screen" className="account-form">
       <h2 className="mb-3">Profile</h2>
@@ -10,61 +36,65 @@ export default function Profile() {
         <Form>
           <FormControl
             id="wd-username"
-            defaultValue="alice"
-            placeholder="username"
+            defaultValue={profile.username}
             className="mb-2"
+            onChange={(e) => setProfile({ ...profile, username: e.target.value })}
           />
           <FormControl
             id="wd-password"
-            defaultValue="123"
+            defaultValue={profile.password}
             type="password"
-            placeholder="password"
             className="mb-2"
+            onChange={(e) => setProfile({ ...profile, password: e.target.value })}
           />
           <FormControl
             id="wd-firstname"
-            defaultValue="Alice"
-            placeholder="First Name"
+            defaultValue={profile.firstName}
             className="mb-2"
+            onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
           />
           <FormControl
             id="wd-lastname"
-            defaultValue="Wonderland"
-            placeholder="Last Name"
+            defaultValue={profile.lastName}
             className="mb-2"
+            onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
           />
           <FormControl
             id="wd-dob"
             type="date"
-            defaultValue="2000-01-01"
+            defaultValue={profile.dob}
             className="mb-2"
+            onChange={(e) => setProfile({ ...profile, dob: e.target.value })}
           />
           <FormControl
             id="wd-email"
-            defaultValue="alice@wonderland.com"
+            defaultValue={profile.email}
             type="email"
-            placeholder="email"
             className="mb-2"
+            onChange={(e) => setProfile({ ...profile, email: e.target.value })}
           />
 
-          {/* Role dropdown */}
-          <Form.Select id="wd-role" defaultValue="FACULTY" className="mb-3">
+          <Form.Select 
+            id="wd-role" 
+            defaultValue={profile.role} // Now reads from state
+            className="mb-3"
+            onChange={(e) => setProfile({ ...profile, role: e.target.value })}
+          >
             <option value="USER">User</option>
             <option value="ADMIN">Admin</option>
             <option value="FACULTY">Faculty</option>
             <option value="STUDENT">Student</option>
           </Form.Select>
 
-          {/* Signout button */}
-          <Link href="/Account/Signin" passHref legacyBehavior>
-            <Button
-              id="wd-signout-btn"
-              variant="danger"
-              className="w-100"
-            >
-              Sign out
-            </Button>
-          </Link>
+          {/* CRITICAL CHANGE: Removed <Link>, added onClick={signout} */}
+          <Button
+            id="wd-signout-btn"
+            variant="danger"
+            className="w-100"
+            onClick={signout}
+          >
+            Sign out
+          </Button>
         </Form>
       </Card>
     </div>

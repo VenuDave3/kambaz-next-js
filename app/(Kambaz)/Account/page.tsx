@@ -6,11 +6,11 @@ import { redirect } from "next/navigation";
 export default function AccountPage() {
   const { currentUser } = useSelector((state: RootState) => state.accountReducer);
   
-  // If no user in Redux, go to Signin
   if (!currentUser) {
-    redirect("/Kambaz/Account/Signin");
+    // --- THIS IS THE FIX ---
+    redirect("/Account/Signin"); // Removed "/Kambaz"
   } else {
-    // If user EXISTS, go to Profile
-    redirect("/Kambaz/Account/Profile");
+    redirect("/Account/Profile"); // Removed "/Kambaz"
+    // --- END FIX ---
   }
 }

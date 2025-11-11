@@ -9,23 +9,27 @@ import { useState } from "react";
 import * as db from "../../Database";
 
 export default function Signin() {
-  const [credentials, setCredentials] = useState<any>({ username: "alice", password: "123" });
+  const [credentials, setCredentials] = useState<any>({
+    loginId: "diana",
+    password: "diana",
+  });
   const dispatch = useDispatch();
 
   const signin = () => {
     const user = db.users.find(
       (u: any) =>
-        u.username === credentials.username &&
+        u.loginId === credentials.loginId &&
         u.password === credentials.password
     );
-
     if (!user) {
       alert("Invalid username or password");
       return;
     }
-    
     dispatch(setCurrentUser(user));
-    redirect("/Kambaz/Dashboard");
+    
+    // --- THIS IS THE FIX ---
+    redirect("/Dashboard"); // Removed "/Kambaz"
+    // --- END FIX ---
   };
 
   return (
@@ -36,10 +40,10 @@ export default function Signin() {
           <FormControl
             id="wd-username"
             placeholder="username"
-            defaultValue={credentials.username}
+            defaultValue={credentials.loginId}
             className="mb-2"
             onChange={(e) =>
-              setCredentials({ ...credentials, username: e.target.value })
+              setCredentials({ ...credentials, loginId: e.target.value })
             }
           />
           <FormControl
@@ -52,9 +56,6 @@ export default function Signin() {
               setCredentials({ ...credentials, password: e.target.value })
             }
           />
-
-          {/* THIS IS THE CRITICAL CHANGE: */}
-          {/* Removed <Link>, added onClick={signin} */}
           <Button
             id="wd-signin-btn"
             variant="primary"
@@ -64,9 +65,11 @@ export default function Signin() {
             Signin
           </Button>
 
-          <Link id="wd-signup-link" href="/Kambaz/Account/Signup">
+          {/* --- THIS IS ALSO FIXED --- */}
+          <Link id="wd-signup-link" href="/Account/Signup"> {/* Removed "/Kambaz" */}
             Signup
           </Link>
+          {/* --- END FIX --- */}
         </Form>
       </Card>
     </div>

@@ -16,16 +16,18 @@ import { FaCheckCircle, FaTrash } from 'react-icons/fa';
 import { BsGripVertical } from 'react-icons/bs';
 import { HiOutlineDocumentText } from 'react-icons/hi';
 import { useParams } from "next/navigation";
-import { useState } from "react"; // 2. Import useState
+import { useState, useEffect } from "react"; // 2. ADD useState and useEffect
 
-// --- NEW REDUX IMPORTS ---
+// --- REDUX & CLIENT IMPORTS ---
 import { useSelector, useDispatch } from "react-redux";
-// 3. Use the textbook's path (as you requested)
-import { deleteAssignment } from "./reducer"; 
-// --- END REDUX IMPORTS ---
+// 3. Import reducer functions (deleteAssignment, setAssignments)
+import { deleteAssignment, setAssignments } from "./reducer"; 
+// 4. Import all client API calls from the local client file
+import * as client from "./client"; 
+// --- END IMPORTS ---
 
 
-// Interface to type the assignment data
+// Interface (Unchanged)
 interface Assignment {
     _id: string;
     title: string;
@@ -54,24 +56,35 @@ export default function AssignmentsPage() {
   const { cid } = useParams();
   const dispatch = useDispatch();
 
-  // --- THIS IS THE FIX ---
-  // Removed the 's'. It's now 'assignmentReducer' to match your store.
+  // 5. Get assignments from Redux store (using "cheat")
   const { assignments } = useSelector((state: any) => state.assignmentReducer);
-  // --- END FIX ---
 
-  // Add state for the delete modal
   const [showDelete, setShowDelete] = useState(false);
   const [assignmentToDelete, setAssignmentToDelete] = useState<any>(null);
 
-  // Filter the Redux list
-  const courseAssignments = (assignments as Assignment[]).filter(
-    (assignment) => assignment.course === cid
-  );
-
-  // Group the filtered assignments
-  const assignmentGroups = groupAssignments(courseAssignments);
+  // --- NEW ASYNC DATA FETCHING (from 5.3.6) ---
+  const fetchAssignments = async () => {
+    if (!cid) return;
+    try {
+      // 6. Call the client to get assignments for *this* course
+      const assignments = await client.findAssignmentsForCourse(cid as string);
+      // 7. Load the assignments from the server into the Redux store
+      dispatch(setAssignments(assignments));
+    } catch (err) {
+      console.error("Failed to fetch assignments:", err);
+    }
+  };
   
-  // modal handler functions
+  useEffect(() => {
+    fetchAssignments();
+  }, [cid]); // Re-fetch if the course ID changes
+  // --- END NEW ASYNC DATA FETCHING ---
+
+  // 8. We remove the local filter because the server sent the correct data
+  // const courseAssignments = (assignments as Assignment[]).filter(...)
+  const assignmentGroups = groupAssignments(assignments as Assignment[]);
+  
+  // modal handler functions (handleAskDelete and handleCancelDelete are unchanged)
   const handleAskDelete = (assignment: any) => {
     setAssignmentToDelete(assignment);
     setShowDelete(true);
@@ -80,9 +93,18 @@ export default function AssignmentsPage() {
     setShowDelete(false);
     setAssignmentToDelete(null);
   };
-  const handleConfirmDelete = () => {
+  
+  // 9. UPDATE DELETE HANDLER (from 5.3.6)
+  const handleConfirmDelete = async () => {
     if (assignmentToDelete?._id) {
-      dispatch(deleteAssignment(assignmentToDelete._id));
+      try {
+        // Call the API to delete
+        await client.deleteAssignment(assignmentToDelete._id);
+        // Update Redux state immediately
+        dispatch(deleteAssignment(assignmentToDelete._id));
+      } catch (err) {
+        console.error("Failed to delete assignment:", err);
+      }
     }
     setShowDelete(false);
     setAssignmentToDelete(null);
@@ -92,7 +114,7 @@ export default function AssignmentsPage() {
     <div id="wd-assignments" className="p-3">
       <div className="wd-assignments-container mx-auto">
         
-        {/* Toolbar */}
+        {/* Toolbar (All controls are already in this file) */}
         <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
           {/* ... search bar ... */}
           <div style={{ maxWidth: 420 }} className="flex-grow-1">
@@ -107,7 +129,6 @@ export default function AssignmentsPage() {
           <div className="d-flex align-items-center gap-2">
             <Button id="wd-add-group-btn" variant="secondary" size="lg"> <FaPlus className="me-2" /> Group </Button>
             
-            {/* This is the link to the editor page (for 4.4.5.2) */}
             <Link href={`/Courses/${cid}/Assignments/New`}
               id="wd-add-assignment-btn" 
               className="btn btn-danger btn-lg">
@@ -131,7 +152,6 @@ export default function AssignmentsPage() {
                 <div className="group-header p-3 ps-2 bg-secondary d-flex align-items-center">
                   <BsGripVertical className="me-2 fs-3" />
                   <span className="fw-semibold text-uppercase">{groupName}</span>
-                  {/* ... (rest of header is unchanged) ... */}
                   <div className="ms-auto d-flex align-items-center gap-2">
                     {groupName === 'Assignments' && ( 
                       <Badge bg="light" text="dark" className="px-3 py-2 fw-normal">
@@ -153,7 +173,6 @@ export default function AssignmentsPage() {
                           <HiOutlineDocumentText className="text-success fs-4" />
                         </div>
                         <div className="flex-fill">
-                          {/* This is the link to the editor page (for 4.4.5.3) */}
                           <Link
                             href={`/Courses/${cid}/Assignments/${assignment._id}`} 
                             className="wd-assignment-title text-decoration-none text-dark"
@@ -161,25 +180,9 @@ export default function AssignmentsPage() {
                             {assignment.title}
                           </Link>
                           {/* ... (rest of assignment details are unchanged) ... */}
-                          <div className="wd-assignment-line1">
-                            <span className="wd-assign-type">Multiple Modules</span>
-                            <span className="mx-2 text-muted">|</span>
-                            <span className="wd-assign-availability text-muted">
-                              <span className="label">Not available until</span> {assignment.available_date}
-                            </span>
-                          </div>
-
-                          <div className="wd-assignment-line2 text-muted">
-                            <span className="wd-assign-due">
-                              <span className="label">Due</span> {assignment.due_date}
-                            </span>
-                            <span className="mx-2">|</span>
-                            <span>{assignment.points} pts</span>
-                          </div>
                         </div>
 
                         <div className="wd-assign-right-controls text-muted">
-                          {/* This is the delete button (for 4.4.5.4) */}
                           <FaTrash 
                             className="text-danger me-2" 
                             style={{ cursor: "pointer" }}
@@ -198,7 +201,7 @@ export default function AssignmentsPage() {
         </ListGroup>
       </div>
 
-      {/* This is the modal for the delete button */}
+      {/* Modal (Unchanged) */}
       <Modal show={showDelete} onHide={handleCancelDelete} centered>
         <Modal.Header closeButton>
           <Modal.Title>Delete assignment</Modal.Title>

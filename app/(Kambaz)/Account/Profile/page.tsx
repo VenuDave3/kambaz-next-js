@@ -1,53 +1,57 @@
 /* eslint-disable */
 "use client";
-// We are merging your <Form>, <Card> with the textbook's logic
-import { Form, FormControl, Button, Card } from "react-bootstrap";
+import { Form, FormControl, Button, Card, FormSelect } from "react-bootstrap";
 import { redirect } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 
-// --- FIX #1: THE IMPORT PATH ---
-// The reducer is one level up, in the 'Account' folder. This path is correct.
+// --- THIS IS THE CHAPTER 5 LOGIC ---
+import * as client from "../client"; // 1. IMPORT THE NEW CLIENT
 import { setCurrentUser } from "../reducer";
-// --- END FIX #1 ---
+// --- END NEW LOGIC ---
 
 export default function Profile() {
   const dispatch = useDispatch();
 
-  // --- FIX #2: THE "CHEAT" ---
-  // We use (state: any) as you wanted. This hides the 'type: 'never' error.
+  // We use (state: any) as you wanted.
   const { currentUser } = useSelector((state: any) => state.accountReducer);
-  // --- END FIX #2 ---
 
-  // We initialize state with the user's data OR empty strings
-  // This prevents the "uncontrolled to controlled" React error
+  // This state is for editing the form fields
   const [profile, setProfile] = useState<any>({
-    loginId: "",
-    password: "",
-    firstName: "",
-    lastName: "",
-    dob: "",
-    email: "",
-    role: "USER",
-    ...currentUser, // This will override the empty strings if currentUser exists
+    loginId: "", password: "", firstName: "",
+    lastName: "", dob: "", email: "", role: "USER",
+    ...currentUser,
   });
 
-  // This function runs when the component loads
-  const fetchProfile = () => {
-    if (!currentUser) {
-      // If no one is logged in, redirect to Signin
-      return redirect("/Account/Signin");
+  // --- NEW ASYNC fetchProfile (from 5.3.2.4) ---
+  const fetchProfile = async () => {
+    try {
+      // Check the server's session, not Redux
+      const user = await client.profile(); 
+      dispatch(setCurrentUser(user)); // Put the user from server into Redux
+      setProfile(user); // Fill the form with the user
+    } catch (error) {
+      // If server sends 401 (not logged in), go to Signin
+      redirect("/Account/Signin");
     }
-    // If logged in, fill the local 'profile' state with the user's info
-    setProfile(currentUser);
   };
 
-  // This function runs when you click "Sign out"
-  const signout = () => {
-    // Clear the user from the Redux store
-    dispatch(setCurrentUser(null));
-    // Send the user back to the Signin page
-    redirect("/Account/Signin");
+  // --- NEW ASYNC signout (from 5.3.2.5) ---
+  const signout = async () => {
+    await client.signout(); // Tell the server to destroy the session
+    dispatch(setCurrentUser(null)); // Clear Redux
+    redirect("/Account/Signin"); // Go to signin
+  };
+
+  // --- NEW updateProfile (from 5.3.2.3) ---
+  const updateProfile = async () => {
+    try {
+      const updatedProfile = await client.updateUser(profile);
+      dispatch(setCurrentUser(updatedProfile));
+      alert("Profile updated successfully!");
+    } catch (error) {
+      alert("Failed to update profile.");
+    }
   };
 
   // This runs fetchProfile() once when the component first renders
@@ -55,7 +59,7 @@ export default function Profile() {
     fetchProfile();
   }, []); // The empty [] means "run once"
 
-  // This one function handles all form field changes
+  // This handles form field changes (unchanged)
   const handleProfileChange = (e: any) => {
     setProfile({
       ...profile,
@@ -72,15 +76,14 @@ export default function Profile() {
         <Card className="p-3">
           <Form>
             
-            {/* --- FIX #3: FORM LOGIC & DATA FIELDS --- */}
-            {/* All fields now use 'value', 'onChange', and your 'users.json' 'id's */}
+            {/* All your form fields are correct and use 'value' and 'onChange' */}
             
             <label>Username (Login ID)</label>
             <FormControl
               id="loginId" // From your users.json
               className="mb-2"
-              value={profile.loginId || ""} // Use 'value' and '|| ""'
-              onChange={handleProfileChange} // Use the new handler
+              value={profile.loginId || ""} 
+              onChange={handleProfileChange}
             />
             <label>Password</label>
             <FormControl
@@ -132,13 +135,23 @@ export default function Profile() {
               <option value="FACULTY">Faculty</option>
               <option value="STUDENT">Student</option>
             </Form.Select>
-            {/* --- END FIX #3 --- */}
+
+            {/* --- NEW BUTTON (from 5.3.2.3) --- */}
+            <Button
+              id="wd-update-profile-btn"
+              variant="primary"
+              className="w-100 mb-2"
+              onClick={updateProfile}
+            >
+              Update
+            </Button>
+            {/* --- END NEW BUTTON --- */}
 
             <Button
               id="wd-signout-btn"
               variant="danger"
               className="w-100"
-              onClick={signout} // Use the new signout function
+              onClick={signout} // Now calls the new async signout
             >
               Sign out
             </Button>

@@ -1,17 +1,16 @@
 /* eslint-disable */
 'use client';
-import { useParams, useRouter } from 'next/navigation'; // 1. Import useRouter
+import { useParams, useRouter } from 'next/navigation'; 
 import Link from 'next/link';
-import React, { useRef } from 'react'; // 2. Import useRef
+// Import useState and useEffect to fetch data
+import React, { useRef, useState, useEffect } from 'react'; 
 import { FaEllipsisV } from "react-icons/fa";
-
-// --- NEW REDUX IMPORTS ---
 import { useSelector, useDispatch } from 'react-redux';
-// 3. Import actions from the reducer (using the textbook's path)
 import { addAssignment, updateAssignment } from "../reducer";
-// --- END NEW IMPORTS ---
+// Import your new client
+import * as client from "../client";
 
-// Define the interface for Assignment
+// ... (Interface is unchanged) ...
 interface Assignment {
     _id: string;
     title: string;
@@ -28,63 +27,98 @@ interface Assignment {
 
 export default function AssignmentEditor() {
   const { cid, aid } = useParams(); 
-  const router = useRouter(); // 4. Get router to navigate
+  const router = useRouter();
   const dispatch = useDispatch();
 
-  // 5. Get assignments list from Redux (using "cheat")
-  const { assignments } = useSelector((state: any) => state.assignmentReducer);
-
-  // 6. Find the assignment to edit. 'New' is the keyword.
-  const assignment = aid !== "New" ? assignments.find((a: any) => a._id === aid) : null;
+  // We no longer need to pull the full list from Redux
+  // const { assignments } = useSelector((state: any) => state.assignmentReducer);
   
-  // 7. Create refs for ALL form fields (like your friend's code)
-  const nameRef = useRef<HTMLInputElement>(null);
-  const descriptionRef = useRef<HTMLTextAreaElement>(null);
-  const pointsRef = useRef<HTMLInputElement>(null);
-  const groupRef = useRef<HTMLSelectElement>(null);
-  const gradeAsRef = useRef<HTMLSelectElement>(null);
-  const submissionTypeRef = useRef<HTMLSelectElement>(null);
-  const dueRef = useRef<HTMLInputElement>(null);
-  const availableFromRef = useRef<HTMLInputElement>(null);
-  const availableUntilRef = useRef<HTMLInputElement>(null);
-
-  // 8. This handles the Save button
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault(); // Stop the form from reloading the page
-    
-    // Collect all data from refs
-    const newAssignmentData = {
-      _id: aid === "New" ? new Date().getTime().toString() : aid,
-      title: nameRef.current?.value,
-      description: descriptionRef.current?.value,
-      points: pointsRef.current?.value,
-      group_name: groupRef.current?.value,
-      // submission_type: submissionTypeRef.current?.value, // You can add all fields
-      due_date: dueRef.current?.value,
-      available_date: availableFromRef.current?.value,
-      until_date: availableUntilRef.current?.value,
-      course: cid,
-    };
-
-    // Dispatch the correct action
-    if (aid === "New") {
-      dispatch(addAssignment(newAssignmentData));
-    } else {
-      dispatch(updateAssignment(newAssignmentData));
+  // --- NEW: Local state for the assignment being edited ---
+  const [assignment, setAssignment] = useState<Partial<Assignment>>({
+    title: "New Assignment",
+    description: "New Description",
+    points: 100,
+    due_date: "",
+    available_date: "",
+    until_date: "",
+    group_name: "ASSIGNMENTS",
+    submission_type: "Online",
+    // ... other defaults
+  });
+  // --- END NEW ---
+  
+  // --- NEW: Fetch the assignment if we are editing ---
+  const fetchAssignment = async () => {
+    if (aid !== "New") {
+      try {
+        const fetchedAssignment = await client.findAssignmentById(aid as string);
+        setAssignment(fetchedAssignment);
+      } catch (err) {
+        console.error("Failed to fetch assignment:", err);
+      }
     }
-    router.push(`/Courses/${cid}/Assignments`);
   };
 
-  // 9. This handles the Cancel button
+  useEffect(() => {
+    fetchAssignment();
+  }, [aid]);
+  // --- END NEW ---
+
+  // We no longer need refs, we can use controlled components with our state
+  // const nameRef = useRef<HTMLInputElement>(null);
+  // ... all other refs ...
+
+  // --- NEW: Handle form input changes ---
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { id, value } = e.target;
+    // Use the field's 'id' to update the correct property in the state
+    const fieldName = id.replace("wd-", "").replace(/-/g, "_"); // e.g., "wd-due-date" -> "due_date"
+    setAssignment({
+      ...assignment,
+      [fieldName]: value,
+    });
+  };
+  // --- END NEW ---
+
+  // --- UPDATED: handleSave ---
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault(); 
+    
+    // The 'assignment' object from our state is the data
+    const assignmentToSave = { ...assignment, course: cid };
+
+    try {
+      if (aid === "New") {
+        const newAssignment = await client.createAssignment(cid as string, assignmentToSave);
+        dispatch(addAssignment(newAssignment));
+      } else {
+        await client.updateAssignment(assignmentToSave);
+        dispatch(updateAssignment(assignmentToSave));
+      }
+      router.push(`/Courses/${cid}/Assignments`);
+    } catch (err) {
+      console.error("Failed to save assignment:", err);
+    }
+  };
+  // --- END UPDATE ---
+
+  // ... (handleCancel is unchanged) ...
   const handleCancel = (e: React.FormEvent) => {
     e.preventDefault();
     router.push(`/Courses/${cid}/Assignments`);
   };
 
+  // Helper to format date for input[type="date"]
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return "";
+    return new Date(dateString).toISOString().split('T')[0];
+  };
+
+
   return (
     <div id="wd-assignments-editor" className="p-3">
       
-      {/* Header and Controls (Your layout is unchanged) */}
+      {/* ... (Header is unchanged) ... */}
       <div className="d-flex justify-content-end align-items-center mb-4">
         <div className="text-success fw-bold me-3">Published</div>
         <button type="button" className="btn btn-secondary me-2">
@@ -93,17 +127,16 @@ export default function AssignmentEditor() {
       </div>
       <hr />
 
-      {/* 10. Form tag is updated to use onSubmit */}
       <form onSubmit={handleSave} className="assignment-editor" style={{ maxWidth: "600px", margin: "0 auto" }}>
           
           <label htmlFor="wd-name" className="mb-2"><b>Assignment Name</b></label>
           <br />
-          {/* 11. All fields now have a 'ref' and smart 'defaultValue' */}
+          {/* --- UPDATED: All fields use 'value' and 'onChange' --- */}
           <input 
             id="wd-name" 
             className="form-control" 
-            defaultValue={assignment ? assignment.title : "New Assignment"}
-            ref={nameRef}
+            value={assignment.title || ""}
+            onChange={handleInputChange}
           />
           <br />
 
@@ -111,8 +144,8 @@ export default function AssignmentEditor() {
             id="wd-description" 
             rows={10} 
             className="form-control" 
-            defaultValue={assignment ? assignment.description : "New Description"}
-            ref={descriptionRef}
+            value={assignment.description || ""}
+            onChange={handleInputChange}
           ></textarea>
           <br />
 
@@ -125,8 +158,8 @@ export default function AssignmentEditor() {
                           id="wd-points" 
                           type="number" 
                           className="form-control" 
-                          defaultValue={assignment ? assignment.points : 100}
-                          ref={pointsRef}
+                          value={assignment.points || 100}
+                          onChange={handleInputChange}
                         />
                       </td>
                   </tr>
@@ -137,8 +170,8 @@ export default function AssignmentEditor() {
                           <select 
                             id="wd-group" 
                             className="form-control" 
-                            defaultValue={assignment ? assignment.group_name : 'ASSIGNMENTS'}
-                            ref={groupRef}
+                            value={assignment.group_name || 'ASSIGNMENTS'}
+                            onChange={handleInputChange}
                           >
                               <option value="ASSIGNMENTS">ASSIGNMENTS</option>
                               <option value="QUIZZES">QUIZZES</option>
@@ -153,8 +186,8 @@ export default function AssignmentEditor() {
                           <select 
                             id="wd-display-grade-as" 
                             className="form-control" 
-                            defaultValue={assignment ? assignment.display_grade_as : "Percentage"}
-                            ref={gradeAsRef}
+                            value={assignment.display_grade_as || "Percentage"}
+                            onChange={handleInputChange}
                           >
                               <option value="Percentage">Percentage</option>
                               <option value="Points">Points</option>
@@ -166,13 +199,13 @@ export default function AssignmentEditor() {
                       <td align="right" valign="top"><label htmlFor="wd-submission-type">Submission Type</label></td>
                       <td className="border p-3">
                           <select 
-                            id="wd-select-submission-type" 
+                            id="wd-submission-type" 
                             className="form-select" 
-                            defaultValue={assignment ? assignment.submission_type : 'Online'}
-                            ref={submissionTypeRef}
+                            value={assignment.submission_type || 'Online'}
+                            onChange={handleInputChange}
                           >
-                              <option value="ONLINE">Online</option>
-                              <option value="IN_PERSON">In-person</option>
+                              <option value="Online">Online</option>
+                              <option value="In-person">In-person</option>
                               <option value="No Submission">No Submission</option>
                           </select>
                           <p></p>
@@ -197,8 +230,8 @@ export default function AssignmentEditor() {
                             id="wd-due-date" 
                             type="date" 
                             className="form-control" 
-                            defaultValue={assignment ? assignment.due_date : ""}
-                            ref={dueRef}
+                            value={formatDate(assignment.due_date)}
+                            onChange={handleInputChange}
                           /><br />
                           
                           <table>
@@ -207,20 +240,20 @@ export default function AssignmentEditor() {
                                   <tr>
                                       <td>
                                         <input 
-                                          id="wd-available-from" 
+                                          id="wd-available-date" 
                                           type="date" 
                                           className="form-control" 
-                                          defaultValue={assignment ? assignment.available_date : ""}
-                                          ref={availableFromRef}
+                                          value={formatDate(assignment.available_date)}
+                                          onChange={handleInputChange}
                                         />
                                       </td>
                                       <td>
                                         <input 
-                                          id="wd-available-until" 
+                                          id="wd-until-date" 
                                           type="date" 
                                           className="form-control" 
-                                          defaultValue={assignment ? assignment.until_date : ""}
-                                          ref={availableUntilRef}
+                                          value={formatDate(assignment.until_date)}
+                                          onChange={handleInputChange}
                                         />
                                       </td>
                                   </tr>
@@ -229,7 +262,6 @@ export default function AssignmentEditor() {
                       </td>
                   </tr>
                   
-                  {/* 12. Save/Cancel buttons are now REAL buttons */}
                   <tr>
                       <td colSpan={2} align="right">
                           <div className="d-flex justify-content-end pt-3">

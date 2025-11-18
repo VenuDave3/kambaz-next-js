@@ -6,7 +6,8 @@ import { redirect } from "next/navigation";
 import { setCurrentUser } from "../reducer";
 import { useDispatch } from "react-redux";
 import { useState } from "react";
-import * as db from "../../Database";
+// import * as db from "../../Database"; // 1. REMOVE this
+import * as client from "../client"; // 2. ADD this import
 
 export default function Signin() {
   const [credentials, setCredentials] = useState<any>({
@@ -15,21 +16,27 @@ export default function Signin() {
   });
   const dispatch = useDispatch();
 
-  const signin = () => {
-    const user = db.users.find(
-      (u: any) =>
-        u.loginId === credentials.loginId &&
-        u.password === credentials.password
-    );
-    if (!user) {
-      alert("Invalid username or password");
-      return;
+  // 3. Make the function ASYNC
+  const signin = async () => {
+    try {
+      // 4. Call the client API instead of the local DB
+      const user = await client.signin({
+        username: credentials.loginId, // The server route expects 'username'
+        password: credentials.password,
+      });
+      
+      // 5. If successful, dispatch and redirect
+      dispatch(setCurrentUser(user));
+      redirect("/Dashboard"); // This path is correct
+
+    } catch (error: any) {
+      // 6. If server sends a 401 error, show an alert
+      if (error.response && error.response.status === 401) {
+        alert(error.response.data.message || "Invalid username or password");
+      } else {
+        alert("An error occurred during sign-in.");
+      }
     }
-    dispatch(setCurrentUser(user));
-    
-    // --- THIS IS THE FIX ---
-    redirect("/Dashboard"); // Removed "/Kambaz"
-    // --- END FIX ---
   };
 
   return (
@@ -65,11 +72,9 @@ export default function Signin() {
             Signin
           </Button>
 
-          {/* --- THIS IS ALSO FIXED --- */}
-          <Link id="wd-signup-link" href="/Account/Signup"> {/* Removed "/Kambaz" */}
+          <Link id="wd-signup-link" href="/Account/Signup">
             Signup
           </Link>
-          {/* --- END FIX --- */}
         </Form>
       </Card>
     </div>

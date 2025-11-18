@@ -1,14 +1,16 @@
 /* eslint-disable */
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react"; // 1. ADD useEffect
 import Link from "next/link";
 // --- REDUX IMPORTS ---
 import { useDispatch, useSelector } from "react-redux";
-// import { RootState } from "../store"; // 1. DELETE THIS LINE
+// 2. We CHANGE the imports to use setCourses (as per 5.3.4.1)
 import {
-  addNewCourse,
-  deleteCourse,
-  updateCourse,
+  setCourses,
+  // We will bring these back for the "On Your Own"
+  // addNewCourse,
+  // deleteCourse,
+  // updateCourse,
 } from "../Courses/coursesReducer"; 
 // --- END REDUX IMPORTS ---
 import {
@@ -22,20 +24,20 @@ import {
   Button,
   FormControl,
 } from "react-bootstrap";
-// --- NEW IMPORT ---
-import * as db from "../Database"; // 1. We need this for the 'enrollments' list
-// --- END NEW IMPORT ---
+// --- IMPORT CHANGES ---
+import * as client from "../Courses/client"; // 3. ADD the new Courses client
+// import * as db from "../Database"; // 4. REMOVE the local database import
+// --- END IMPORT CHANGES ---
 
 export default function Dashboard() {
   // --- REDUX STATE ---
-  // 2. THIS IS THE "CHEAT" - Changed 'RootState' to 'any'
+  // 5. These are correct (using your "cheat")
   const { courses } = useSelector((state: any) => state.coursesReducer);
-  // 3. THIS IS THE "CHEAT" - Changed 'RootState' to 'any'
   const { currentUser } = useSelector((state: any) => state.accountReducer);
   const dispatch = useDispatch();
   
-  // 4. Get the static enrollments list from the database
-  const { enrollments } = db;
+  // 6. REMOVE enrollments (server handles this)
+  // const { enrollments } = db;
 
   // --- LOCAL STATE (Unchanged) ---
   const [course, setCourse] = useState<any>({
@@ -44,39 +46,68 @@ export default function Dashboard() {
     image: "/images/reactjs.jpg", description: "New Description",
   });
 
-  // --- NEW FILTERING LOGIC (THE "SAFE" WAY) ---
-  const enrolledCourses = courses.filter((course: any) => { // Added :any
-    // 5. THIS IS THE SAFETY CHECK: If no user is logged in, show no courses.
-    if (!currentUser) {
-      return false;
+  // --- NEW ASYNC DATA FETCHING (from 5.3.4.1) ---
+  const fetchCourses = async () => {
+    if (!currentUser) return; // Don't fetch if no one is logged in
+    try {
+      // 7. Call the API to get *only* the user's courses
+      const courses = await client.findMyCourses();
+      // 8. Put the courses from the server into the Redux store
+      dispatch(setCourses(courses));
+    } catch (error) {
+      console.error(error);
     }
-    // 6. Now we know 'currentUser' exists, so we can safely check 'currentUser._id'
-    return enrollments.some(
-      (enrollment: any) => // Added :any
-        enrollment.user === currentUser._id &&
-        enrollment.course === course._id
-    );
-  });
-  // 
+  };
+  useEffect(() => {
+    fetchCourses();
+  }, [currentUser]); // Re-fetch if the user logs in
+  // --- END NEW ASYNC DATA FETCHING ---
+
+  
+  // --- NEW ASYNC HANDLERS (from 5.3.4.2, 5.3.4.3, 5.3.4.4) ---
+  const onAddNewCourse = async () => {
+    const newCourse = await client.createCourse(course);
+    // 9. Update Redux state as per textbook
+    dispatch(setCourses([ ...courses, newCourse ]));
+  };
+
+  const onDeleteCourse = async (courseId: string) => {
+    await client.deleteCourse(courseId);
+    // 10. Update Redux state as per textbook
+    dispatch(setCourses(courses.filter((course: any) => course._id !== courseId)));
+  };
+
+  const onUpdateCourse = async () => {
+    await client.updateCourse(course);
+    // 11. Update Redux state as per textbook
+    dispatch(setCourses(courses.map((c: any) => {
+      if (c._id === course._id) { return course; }
+      else { return c; }
+    })));
+  };
+  // --- END NEW ASYNC HANDLERS ---
+
+  // 12. REMOVE the local 'enrolledCourses' filter
+  // const enrolledCourses = courses.filter(...) 
 
   return (
     <div id="wd-dashboard" className="p-3">
       <h1 id="wd-dashboard-title">Dashboard</h1> <hr />
 
-      {/* --- NEW COURSE FORM (Unchanged) --- */}
+      {/* --- NEW COURSE FORM (onClick handlers are updated) --- */}
       <h5>
         New Course
         <Button
           className="btn btn-primary float-end"
           id="wd-add-new-course-click"
-          onClick={() => dispatch(addNewCourse(course))}
+          onClick={onAddNewCourse} // 13. Use new async handler
         >
           Add
         </Button>
         <Button
           className="btn btn-warning float-end me-2"
           id="wd-update-course-click"
-          onClick={() => dispatch(updateCourse(course))}
+          onClick={onUpdateCourse} // 14. Use new async handler
         >
           Update
         </Button>
@@ -96,20 +127,19 @@ export default function Dashboard() {
       <hr />
 
       {/* --- COURSE LIST --- */}
-      {/* 7. Update the count to use the *filtered* list */}
-      <h2 id="wd-dashboard-published">Published Courses ({enrolledCourses.length})</h2>
+      {/* 15. We just map over 'courses' now, it's already filtered by the server */}
+      <h2 id="wd-dashboard-published">Published Courses ({courses.length})</h2>
       <hr />
       <div id="wd-dashboard-courses">
         <Row xs={1} md={5} className="g-4 wd-dashboard-row">
-          {/* 8. Map over the new 'enrolledCourses' list */}
-          {enrolledCourses.map((course: any) => ( // Added :any
+          {/* 16. Map over 'courses' from Redux */}
+          {courses.map((course: any) => ( // Keeping (course: any) as requested
             <Col
               key={course._id}
               className="wd-dashboard-course"
               style={{ width: "300px" }}
             >
               <Card>
-                {/* ... (The rest of your card is unchanged) ... */}
                 <Card.Img
                   src="/images/reactjs.jpg"
                   variant="top"
@@ -149,7 +179,7 @@ export default function Dashboard() {
                     id="wd-delete-course-click"
                     onClick={(event) => {
                       event.preventDefault();
-                      dispatch(deleteCourse(course._id));
+                      onDeleteCourse(course._id); // 17. Use new async handler
                     }}
                     variant="danger"
                     className="float-end"

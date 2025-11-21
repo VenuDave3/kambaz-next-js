@@ -2,39 +2,37 @@
 "use client";
 import Link from "next/link";
 import { Form, FormControl, Button, Card } from "react-bootstrap";
-import { redirect } from "next/navigation";
+// Use useRouter for navigation after successful API call
+import { useRouter } from "next/navigation"; 
 import { setCurrentUser } from "../reducer";
 import { useDispatch } from "react-redux";
 import { useState } from "react";
-// import * as db from "../../Database"; // 1. REMOVE this
-import * as client from "../client"; // 2. ADD this import
+import * as client from "../client"; 
 
 export default function Signin() {
+  // Use 'username' in state to match the payload property name
   const [credentials, setCredentials] = useState<any>({
-    loginId: "diana",
-    password: "diana",
+    username: "iron_man", // Example credential
+    password: "stark123",  // Example credential
   });
   const dispatch = useDispatch();
+  const router = useRouter(); // Use useRouter for client-side navigation
 
-  // 3. Make the function ASYNC
   const signin = async () => {
     try {
-      // 4. Call the client API instead of the local DB
-      const user = await client.signin({
-        username: credentials.loginId, // The server route expects 'username'
-        password: credentials.password,
-      });
+      // Send credentials directly, as state keys (username, password) now match payload keys
+      const user = await client.signin(credentials); 
       
-      // 5. If successful, dispatch and redirect
+      // If successful, dispatch and redirect
       dispatch(setCurrentUser(user));
-      redirect("/Dashboard"); // This path is correct
+      router.push("/Dashboard"); 
 
     } catch (error: any) {
-      // 6. If server sends a 401 error, show an alert
       if (error.response && error.response.status === 401) {
         alert(error.response.data.message || "Invalid username or password");
       } else {
-        alert("An error occurred during sign-in.");
+        // If it's a network error, this generic alert catches it
+        alert("An error occurred during sign-in. Check server and network logs.");
       }
     }
   };
@@ -47,10 +45,11 @@ export default function Signin() {
           <FormControl
             id="wd-username"
             placeholder="username"
-            defaultValue={credentials.loginId}
+            defaultValue={credentials.username} // Use .username
             className="mb-2"
             onChange={(e) =>
-              setCredentials({ ...credentials, loginId: e.target.value })
+              // Update 'username' property in state
+              setCredentials({ ...credentials, username: e.target.value })
             }
           />
           <FormControl

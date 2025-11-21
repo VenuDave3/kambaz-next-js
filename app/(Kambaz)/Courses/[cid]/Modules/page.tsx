@@ -1,29 +1,28 @@
 /* eslint-disable */
-"use client"
+// app/(Kambaz)/Courses/[cid]/Modules/page.tsx
+
+"use client";
 import { useParams } from "next/navigation";
-import React, { useState, useEffect } from 'react'; // 1. ADD useEffect
+import React, { useState, useEffect } from 'react';
 import { BsGripVertical } from "react-icons/bs"; 
 import { ListGroup, ListGroupItem, FormControl } from 'react-bootstrap';
 import LessonControlButtons from './LessonControlButtons'; 
 import ModuleControlButtons from './ModuleControlButtons';
 import ModulesControls from "./ModulesControls";
-
-// --- NEW IMPORTS (from 5.3.5) ---
-// 2. We add 'setModules' and update the import path (to the non-crashing one)
+// --- Redux Imports ---
 import { addModule, editModule, updateModule, deleteModule, setModules } from "./reducer";
 import { useSelector, useDispatch } from "react-redux";
-// import { RootState } from "../../../store"; // We'll use (state: any)
-import * as client from "../../client"; // 3. Import the new Courses client
-// --- END NEW IMPORTS ---
+// --- Client API Import ---
+import * as client from "../../client"; 
 
-// Define interfaces
+// Define interfaces to ensure your component is type-safe
 interface Lesson { _id: string; name: string; description: string; module: string; }
 interface Module { _id: string; name: string; description: string; course: string; lessons?: Lesson[]; editing?: boolean; }
 
 export default function Modules() {
   const { cid } = useParams();
   
-  // --- REDUX STATE & DISPATCH (Using the "cheat" as requested) ---
+  // --- REDUX STATE & DISPATCH ---
   const { modules } = useSelector((state: any) => state.modulesReducer);
   const dispatch = useDispatch();
   // --- END REDUX STATE & DISPATCH ---
@@ -31,87 +30,93 @@ export default function Modules() {
   // This local state is still needed for the "Add" form
   const [moduleName, setModuleName] = useState("");
 
-  // --- NEW ASYNC DATA FETCHING (from 5.3.5.1) ---
+  // --- READ: Fetch modules from server ---
   const fetchModules = async () => {
-    // 4. Call the client to get modules for *this* course
+    // 1. CRITICAL CHECK: Ensure cid is available before fetching
+    if (!cid) return; 
+    
+    // The client API uses 'cid' to fetch data
     const modules = await client.findModulesForCourse(cid as string);
-    // 5. Load the modules from the server into the Redux store
+    
+    // Load the modules from the server into the Redux store
     dispatch(setModules(modules));
   };
+  
+  // --- LIFECYCLE: Fetch data when CID is available/changes ---
+  // 2. CRITICAL FIX: The dependency array must include [cid] to trigger fetch
+  // when the course changes or when the component first mounts and cid is defined.
   useEffect(() => {
     fetchModules();
-  }, [cid]); // Re-fetch if the course ID changes
-  // --- END NEW ASYNC DATA FETCHING ---
+  }, [cid]); 
 
   
-  // --- NEW ASYNC HANDLERS (from 5.3.5.2, 5.3.5.3, 5.3.5.4) ---
+  // --- CRUD HANDLERS ---
   const onCreateModuleForCourse = async () => {
     if (!cid) return;
     const newModule = { name: moduleName, course: cid };
-    // 6. Call the client to create the module on the server
-    const module = await client.createModuleForCourse(cid as string, newModule);
-    // 7. Update Redux store (as per textbook)
+    
+    const module = await client.createModuleForCourse((cid as string), newModule);
+    
+    // Update Redux store: append new module
     dispatch(setModules([...modules, module]));
-    setModuleName(""); // Clear the input
+    setModuleName(""); // Clear the input field
   };
 
   const onRemoveModule = async (moduleId: string) => {
-    // 8. Call the client to delete the module from the server
+    // Delete from server
     await client.deleteModule(moduleId);
-    // 9. Update Redux store (as per textbook)
+    
+    // Update Redux by filtering the module out
     dispatch(setModules(modules.filter((m: any) => m._id !== moduleId)));
   };
 
   const onUpdateModule = async (module: any) => {
-    // 10. Call the client to update the module on the server
+    // Update on server
     await client.updateModule(module);
-    // 11. Update Redux store (as per textbook)
+    
+    // Update Redux state
     const newModules = modules.map((m: any) => m._id === module._id ? module : m );
     dispatch(setModules(newModules));
   };
-  // --- END NEW ASYNC HANDLERS ---
+  // --- END CRUD HANDLERS ---
 
 
   return (
     <div id="wd-modules-screen">
       
-      {/* 12. Pass the new async 'onCreateModuleForCourse' to the controls */}
       <ModulesControls 
-        moduleName={moduleName} 
-        setModuleName={setModuleName} 
+        moduleName={moduleName} setModuleName={setModuleName}
         addModule={onCreateModuleForCourse} 
       />
-
+      {/* Retaining your original structure for spacing */}
+      <br /><br /><br />
+      
       <ListGroup id="wd-modules" className="rounded-0">
         
-        {/* 13. REMOVED the .filter()! The server already filtered for us. */}
-        {modules.map((module: Module) => (
+        {modules.map((module: any) =>(
           <ListGroupItem key={module._id} className="wd-module p-0 mb-5 fs-5 border-gray">
             
             <div className="wd-title p-3 ps-2 bg-secondary">
               <BsGripVertical className="me-2 fs-3" />
               
-              {/* --- IN-LINE EDITING LOGIC (from 5.3.5.4) --- */}
+              {/* --- IN-LINE EDITING LOGIC --- */}
               {!module.editing && module.name}
               { module.editing && (
                 <FormControl 
                   className="w-50 d-inline-block"
                   defaultValue={module.name}
                   onChange={(e) => 
-                    // This updates the *local* Redux state on every keypress
+                    // Update local Redux state immediately on keypress
                     dispatch(updateModule({ ...module, name: e.target.value })) 
                   }
                   onKeyDown={(e) => {
-                    // This saves the change to the *server* on Enter
                     if (e.key === "Enter") {
-                      onUpdateModule({ ...module, editing: false });
+                      onUpdateModule({ ...module, editing: false }); // Save to server and exit edit mode
                     }
                   }}
                 />
               )}
-              {/* --- END IN-LINE EDITING LOGIC --- */}
-
-              {/* 14. Pass the new async 'onRemoveModule' to the buttons */}
+              {/* --- CONTROL BUTTONS --- */}
               <ModuleControlButtons 
                 moduleId={module._id}
                 deleteModule={(moduleId) => onRemoveModule(moduleId)}
@@ -121,7 +126,7 @@ export default function Modules() {
             
             {module.lessons && (
               <ListGroup className="wd-lessons rounded-0">
-                {module.lessons.map((lesson: Lesson) => (
+                {module.lessons.map((lesson: any) => (
                   <ListGroupItem key={lesson._id} className="wd-lesson p-3 ps-1">
                     <BsGripVertical className="me-2 fs-3" /> {lesson.name} 
                     <LessonControlButtons />

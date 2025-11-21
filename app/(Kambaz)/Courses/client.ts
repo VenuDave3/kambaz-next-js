@@ -1,9 +1,8 @@
 /* eslint-disable */
 import axios from "axios";
 
-// 1. Get the axios instance that sends cookies (from 5.3.3.2)
-// We get this from the Account client, but we'll redefine it here
-// as shown in the textbook.
+// CRITICAL: We MUST use this instance for any route that requires 
+// a logged-in session (like all CRUD operations except public reads).
 const axiosWithCredentials = axios.create({
   withCredentials: true,
 });
@@ -11,17 +10,19 @@ const axiosWithCredentials = axios.create({
 export const HTTP_SERVER = process.env.NEXT_PUBLIC_HTTP_SERVER;
 export const COURSES_API = `${HTTP_SERVER}/api/courses`;
 export const MODULES_API = `${HTTP_SERVER}/api/modules`;
-export const USERS_API = `${HTTP_SERVER}/api/users`; // (from 5.3.4.1)
+export const USERS_API = `${HTTP_SERVER}/api/users`; 
 
-// --- Course Functions (from 5.3.4) ---
+// ===================================
+// === COURSE FUNCTIONS (CRUD) ===
+// ===================================
 
-// (from 5.3.4.1)
+// READ: Fetch all courses (Public/Unfiltered)
 export const fetchAllCourses = async () => {
   const { data } = await axios.get(COURSES_API);
   return data;
 };
 
-// (from 5.3.4.1)
+// READ: Fetch courses for current user (Authenticated Filter)
 export const findMyCourses = async () => {
   const { data } = await axiosWithCredentials.get(
     `${USERS_API}/current/courses`
@@ -29,52 +30,59 @@ export const findMyCourses = async () => {
   return data;
 };
 
-// (from 5.3.4.2)
+// CREATE: Create new course (Authenticated)
 export const createCourse = async (course: any) => {
   const { data } = await axiosWithCredentials.post(
-    `${USERS_API}/current/courses`, // This is the textbook's weird path
+    `${USERS_API}/current/courses`, // Authenticated path
     course
   );
   return data;
 };
 
-// (from 5.3.4.3)
+// DELETE: Delete course (Authenticated)
 export const deleteCourse = async (id: string) => {
-  const { data } = await axios.delete(`${COURSES_API}/${id}`);
+  // Uses axiosWithCredentials for authentication
+  const { data } = await axiosWithCredentials.delete(`${COURSES_API}/${id}`);
   return data;
 };
 
-// (from 5.3.4.4)
+// UPDATE: Update course (Authenticated)
 export const updateCourse = async (course: any) => {
-  const { data } = await axios.put(`${COURSES_API}/${course._id}`, course);
+  // Uses axiosWithCredentials for authentication
+  const { data } = await axiosWithCredentials.put(`${COURSES_API}/${course._id}`, course);
   return data;
 };
 
-// --- Module Functions (from 5.3.5) ---
+// ===================================
+// === MODULE FUNCTIONS (CRUD) ===
+// ===================================
 
-// (from 5.3.5.1)
+// READ: Fetch modules for course (Public read, usually)
 export const findModulesForCourse = async (courseId: string) => {
   const response = await axios.get(`${COURSES_API}/${courseId}/modules`);
   return response.data;
 };
 
-// (from 5.3.5.2)
+// CREATE: Create module (Authenticated)
 export const createModuleForCourse = async (courseId: string, module: any) => {
-  const response = await axios.post(
+  // Uses axiosWithCredentials for authentication
+  const response = await axiosWithCredentials.post(
     `${COURSES_API}/${courseId}/modules`,
     module
   );
   return response.data;
 };
 
-// (from 5.3.5.3)
+// DELETE: Delete module (Authenticated)
 export const deleteModule = async (moduleId: string) => {
-  const response = await axios.delete(`${MODULES_API}/${moduleId}`);
+  // Uses axiosWithCredentials for authentication
+  const response = await axiosWithCredentials.delete(`${MODULES_API}/${moduleId}`);
   return response.data;
 };
 
-// (from 5.3.5.4)
+// UPDATE: Update module (Authenticated)
 export const updateModule = async (module: any) => {
-  const { data } = await axios.put(`${MODULES_API}/${module._id}`, module);
+  // Uses axiosWithCredentials for authentication
+  const { data } = await axiosWithCredentials.put(`${MODULES_API}/${module._id}`, module);
   return data;
 };

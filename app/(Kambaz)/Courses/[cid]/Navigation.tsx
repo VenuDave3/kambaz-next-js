@@ -7,11 +7,8 @@ import { ListGroup } from 'react-bootstrap';
 export default function CourseNavigation() {
   const pathname = usePathname();
   const params = useParams();
-  
-  // 1. Retrieve the Course ID (cid) from the URL parameters
   const { cid } = params;
 
-  // 2. Data array of links as required by the assignment
   const links = ["Home", "Modules", "Piazza", "Zoom", "Assignments", "Quizzes", "Grades", "People"];
 
   return (
@@ -20,25 +17,18 @@ export default function CourseNavigation() {
       className="wd-course-navigation me-4 list-group fs-5 rounded-0" 
       style={{ width: '150px' }}
     >
-      {/* 3. Map over the links array */}
       {links.map((link) => {
-        // FIX: DETERMINE PATH SUFFIX: Add '/Table' only if link is "People"
-        const pathSuffix = link === 'People' ? '/Table' : '';
-        
-        // FIX: DETERMINE FULL HREF: Use the pathSuffix
-        const hrefPath = `/Courses/${cid}/${link}${pathSuffix}`;
+        // ✅ FIX: Removed specific check for 'People'. 
+        // All links now follow the standard pattern: /Courses/{cid}/{link}
+        const hrefPath = `/Courses/${cid}/${link}`;
 
-        // FIX: DETERMINE ACTIVE STATE: Check against the full, corrected path
-        // This resolves the highlighting failure after fixing the 404
-        const isActive = pathname.endsWith(link + pathSuffix);
+        // Check active state based on the clean URL
+        const isActive = pathname.includes(link);
 
         return (
           <Link
             key={link}
-            // FIXED HREF
             href={hrefPath} 
-            
-            // FIXED HIGHLIGHTING LOGIC
             className={`list-group-item border-0 text-decoration-none 
                         ${isActive ? "text-danger bg-light" : "text-dark"}`}
             style={{ 

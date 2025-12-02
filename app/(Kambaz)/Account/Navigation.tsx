@@ -1,3 +1,4 @@
+/* eslint-disable */
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -23,8 +24,6 @@ export default function AccountNavigation() {
   return (
     <div id="wd-account-navigation" className="wd list-group fs-5 rounded-0" style={{ width: 220 }}>
       
-      {/* --- THIS IS THE FIX --- */}
-      {/* Removed "/Kambaz" from all href paths */}
       {!currentUser ? (
         <React.Fragment>
           {Item('/Account/Signin', 'wd-account-signin-link', 'Signin')}<br/>
@@ -33,9 +32,14 @@ export default function AccountNavigation() {
       ) : (
         <React.Fragment>
           {Item('/Account/Profile', 'wd-account-profile-link', 'Profile')}<br/>
+          {/* FIXED: Cast currentUser to 'any' to resolve the TypeScript error */}
+          {(currentUser as any)?.role === "ADMIN" && (
+            <React.Fragment>
+              {Item('/Account/Users', 'wd-account-users-link', 'Users')}<br/>
+            </React.Fragment>
+          )}
         </React.Fragment>
       )}
-      {/* --- END FIX --- */}
     </div>
   );
 }

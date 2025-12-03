@@ -8,7 +8,7 @@ import {
   ListGroup,
   ListGroupItem,
   Badge,
-  Modal, // 1. Import Modal
+  Modal, 
 } from 'react-bootstrap';
 import { IoSearchOutline, IoEllipsisVertical } from 'react-icons/io5';
 import { FaPlus } from 'react-icons/fa6';
@@ -16,12 +16,12 @@ import { FaCheckCircle, FaTrash } from 'react-icons/fa';
 import { BsGripVertical } from 'react-icons/bs';
 import { HiOutlineDocumentText } from 'react-icons/hi';
 import { useParams } from "next/navigation";
-import { useState } from "react"; // 2. Import useState
+import { useState } from "react";
 
-// --- NEW REDUX IMPORTS ---
+// --- REDUX IMPORTS ---
 import { useSelector, useDispatch } from "react-redux";
-// 3. Use the textbook's path (as you requested)
 import { deleteAssignment } from "./reducer"; 
+import { RootState } from "../../../store"; 
 // --- END REDUX IMPORTS ---
 
 
@@ -54,10 +54,14 @@ export default function AssignmentsPage() {
   const { cid } = useParams();
   const dispatch = useDispatch();
 
-  // --- THIS IS THE FIX ---
-  // Removed the 's'. It's now 'assignmentReducer' to match your store.
+  // 🛑 FIX 1: Use type assertion for currentUser
   const { assignments } = useSelector((state: any) => state.assignmentReducer);
-  // --- END FIX ---
+  const { currentUser } = useSelector(
+    (state: RootState) => state.accountReducer as { currentUser: { role?: string, _id?: string } | null }
+  );
+
+  // 🛑 NEW: Check for Faculty role
+  const isFaculty = currentUser?.role === "FACULTY";
 
   // Add state for the delete modal
   const [showDelete, setShowDelete] = useState(false);
@@ -73,6 +77,8 @@ export default function AssignmentsPage() {
   
   // modal handler functions
   const handleAskDelete = (assignment: any) => {
+    // 🛑 Restriction check here
+    if (!isFaculty) return; 
     setAssignmentToDelete(assignment);
     setShowDelete(true);
   };
@@ -104,18 +110,21 @@ export default function AssignmentsPage() {
             </InputGroup>
           </div>
           
-          <div className="d-flex align-items-center gap-2">
-            <Button id="wd-add-group-btn" variant="secondary" size="lg"> <FaPlus className="me-2" /> Group </Button>
-            
-            {/* This is the link to the editor page (for 4.4.5.2) */}
-            <Link href={`/Courses/${cid}/Assignments/New`}
-              id="wd-add-assignment-btn" 
-              className="btn btn-danger btn-lg">
-              <FaPlus className="me-2" /> Assignment 
-            </Link>
-            
-            <Button variant="light" size="lg" className="border"> <IoEllipsisVertical /> </Button>
-          </div>
+          {/* 🛑 MODIFICATION 2: Hide creation buttons from Students */}
+          {isFaculty && (
+            <div className="d-flex align-items-center gap-2">
+              <Button id="wd-add-group-btn" variant="secondary" size="lg"> <FaPlus className="me-2" /> Group </Button>
+              
+              {/* Link to editor page */}
+              <Link href={`/Courses/${cid}/Assignments/New`}
+                id="wd-add-assignment-btn" 
+                className="btn btn-danger btn-lg">
+                <FaPlus className="me-2" /> Assignment 
+              </Link>
+              
+              <Button variant="light" size="lg" className="border"> <IoEllipsisVertical /> </Button>
+            </div>
+          )}
         </div>
 
         {/* Dynamic Assignment Groups */}
@@ -127,20 +136,30 @@ export default function AssignmentsPage() {
                 key={groupName} 
                 className="p-0 mb-4 fs-5 border-gray wd-assignments-group"
               >
-                {/* ... (Group Header Bar is unchanged) ... */}
+                {/* Group Header Bar */}
                 <div className="group-header p-3 ps-2 bg-secondary d-flex align-items-center">
-                  <BsGripVertical className="me-2 fs-3" />
+                  {isFaculty && <BsGripVertical className="me-2 fs-3" />} {/* Grip icon only for faculty */}
                   <span className="fw-semibold text-uppercase">{groupName}</span>
-                  {/* ... (rest of header is unchanged) ... */}
-                  <div className="ms-auto d-flex align-items-center gap-2">
-                    {groupName === 'Assignments' && ( 
-                      <Badge bg="light" text="dark" className="px-3 py-2 fw-normal">
+                  
+                  {/* 🛑 MODIFICATION 3: Group Header Controls (Plus/Ellipsis) only for Faculty */}
+                  {isFaculty ? (
+                    <div className="ms-auto d-flex align-items-center gap-2">
+                        {groupName === 'Assignments' && ( 
+                          <Badge bg="light" text="dark" className="px-3 py-2 fw-normal">
+                            40% of Total
+                          </Badge>
+                        )}
+                        <Button variant="light" size="sm" className="border"> <FaPlus /> </Button>
+                        <Button variant="light" size="sm" className="border"> <IoEllipsisVertical /> </Button>
+                    </div>
+                  ) : (
+                    // Students only see the badge
+                    groupName === 'Assignments' && ( 
+                      <Badge bg="light" text="dark" className="px-3 py-2 fw-normal ms-auto">
                         40% of Total
                       </Badge>
-                    )}
-                    <Button variant="light" size="sm" className="border"> <FaPlus /> </Button>
-                    <Button variant="light" size="sm" className="border"> <IoEllipsisVertical /> </Button>
-                  </div>
+                    )
+                  )}
                 </div>
 
                 {/* Assignment Items within the group */}
@@ -148,19 +167,21 @@ export default function AssignmentsPage() {
                   {groupList.map((assignment) => (
                     <ListGroupItem key={assignment._id} className="wd-assignment p-3 ps-2">
                       <div className="d-flex align-items-start gap-2">
-                        <BsGripVertical className="fs-4 mt-1" />
+                        {isFaculty && <BsGripVertical className="fs-4 mt-1" />} {/* Grip only for faculty */}
+                        
                         <div className="mt-1">
                           <HiOutlineDocumentText className="text-success fs-4" />
                         </div>
                         <div className="flex-fill">
-                          {/* This is the link to the editor page (for 4.4.5.3) */}
+                          {/* 🛑 MODIFICATION 4: Link destination based on role */}
                           <Link
-                            href={`/Courses/${cid}/Assignments/${assignment._id}`} 
+                            // Faculty links to editor, Students link to view (currently '#')
+                            href={isFaculty ? `/Courses/${cid}/Assignments/${assignment._id}` : `#`} 
                             className="wd-assignment-title text-decoration-none text-dark"
                           >
                             {assignment.title}
                           </Link>
-                          {/* ... (rest of assignment details are unchanged) ... */}
+                          {/* ... assignment details ... */}
                           <div className="wd-assignment-line1">
                             <span className="wd-assign-type">Multiple Modules</span>
                             <span className="mx-2 text-muted">|</span>
@@ -178,16 +199,19 @@ export default function AssignmentsPage() {
                           </div>
                         </div>
 
-                        <div className="wd-assign-right-controls text-muted">
-                          {/* This is the delete button (for 4.4.5.4) */}
-                          <FaTrash 
-                            className="text-danger me-2" 
-                            style={{ cursor: "pointer" }}
-                            onClick={() => handleAskDelete(assignment)} 
-                          />
-                          <FaCheckCircle className="text-success me-2" />
-                          <IoEllipsisVertical className="fs-5" />
-                        </div>
+                        {/* 🛑 MODIFICATION 5: Only show action icons (trash/ellipsis) to Faculty */}
+                        {isFaculty && (
+                          <div className="wd-assign-right-controls text-muted">
+                            <FaTrash 
+                              className="text-danger me-2" 
+                              style={{ cursor: "pointer" }}
+                              onClick={() => handleAskDelete(assignment)} 
+                            />
+                            <FaCheckCircle className="text-success me-2" />
+                            <IoEllipsisVertical className="fs-5" />
+                          </div>
+                        )}
+                        {/* Students will only see the assignment details (read-only) */}
                       </div>
                     </ListGroupItem>
                   ))}
@@ -198,7 +222,7 @@ export default function AssignmentsPage() {
         </ListGroup>
       </div>
 
-      {/* This is the modal for the delete button */}
+      {/* The delete modal is still here, but handleAskDelete prevents non-faculty from triggering it. */}
       <Modal show={showDelete} onHide={handleCancelDelete} centered>
         <Modal.Header closeButton>
           <Modal.Title>Delete assignment</Modal.Title>

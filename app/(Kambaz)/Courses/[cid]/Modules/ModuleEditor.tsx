@@ -15,7 +15,7 @@ export default function ModuleEditor({ show, handleClose, dialogTitle, moduleNam
         <Modal.Title>{dialogTitle}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <FormControl value={moduleName}
+        <FormControl defaultValue={moduleName}
           onChange={(e) => { setModuleName(e.target.value); }} />
       </Modal.Body>
       <Modal.Footer>

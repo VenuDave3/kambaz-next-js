@@ -14,26 +14,29 @@ const modulesSlice = createSlice({
     // Logic from 4.4.3.1 (Add)
     addModule: (state, { payload: module }) => {
       const newModule: any = {
-        _id: uuidv4(),
+        _id: uuidv4(), 
         lessons: [],
-        name: module.name,
-        course: module.course,
+        
+        // 🛑 FIX 1: Access properties using 'module' (the destructured payload name)
+        name: module.name, 
+        course: module.course, 
       };
-      state.modules = [...state.modules, newModule] as any;
+      
+      // 🛑 FIX 2: Use the reliable push method for Redux Toolkit/Immer
+      state.modules.push(newModule); 
     },
-    // Logic from 4.4.3.2 (Delete)
+    
+    // ... (rest of the reducer is unchanged and correct) ...
     deleteModule: (state, { payload: moduleId }) => {
       state.modules = state.modules.filter(
         (m: any) => m._id !== moduleId
       );
     },
-    // Logic from 4.4.3.3 (Update)
     updateModule: (state, { payload: module }) => {
       state.modules = state.modules.map((m: any) =>
         m._id === module._id ? module : m
       ) as any;
     },
-    // Logic from 4.4.3.3 (Edit)
     editModule: (state, { payload: moduleId }) => {
       state.modules = state.modules.map((m: any) =>
         m._id === moduleId ? { ...m, editing: true } : m

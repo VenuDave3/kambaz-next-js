@@ -5,10 +5,10 @@ import Link from 'next/link';
 import React, { useRef } from 'react'; // 2. Import useRef
 import { FaEllipsisV } from "react-icons/fa";
 
-// --- NEW REDUX IMPORTS ---
+// --- REDUX IMPORTS ---
 import { useSelector, useDispatch } from 'react-redux';
-// 3. Import actions from the reducer (using the textbook's path)
 import { addAssignment, updateAssignment } from "../reducer";
+import { RootState } from "../../../../store"; // 🛑 NEW: Import RootState
 // --- END NEW IMPORTS ---
 
 // Define the interface for Assignment
@@ -28,12 +28,24 @@ interface Assignment {
 
 export default function AssignmentEditor() {
   const { cid, aid } = useParams(); 
-  const router = useRouter(); // 4. Get router to navigate
+  const router = useRouter(); 
   const dispatch = useDispatch();
 
-  // 5. Get assignments list from Redux (using "cheat")
+  // 🛑 MODIFICATION 1: Get currentUser and check role
   const { assignments } = useSelector((state: any) => state.assignmentReducer);
+  const { currentUser } = useSelector(
+    (state: RootState) => state.accountReducer as { currentUser: { role?: string, _id?: string } | null }
+  );
 
+  const isFaculty = currentUser?.role === "FACULTY";
+
+  // 🛑 MODIFICATION 2: Redirect non-faculty immediately
+  if (!isFaculty) {
+    // Redirect students/unauthenticated users back to the read-only list
+    router.push(`/Courses/${cid}/Assignments`);
+    return null; // Return null to prevent rendering the editor UI
+  }
+  
   // 6. Find the assignment to edit. 'New' is the keyword.
   const assignment = aid !== "New" ? assignments.find((a: any) => a._id === aid) : null;
   
@@ -50,7 +62,7 @@ export default function AssignmentEditor() {
 
   // 8. This handles the Save button
   const handleSave = (e: React.FormEvent) => {
-    e.preventDefault(); // Stop the form from reloading the page
+    e.preventDefault(); 
     
     // Collect all data from refs
     const newAssignmentData = {
@@ -59,7 +71,6 @@ export default function AssignmentEditor() {
       description: descriptionRef.current?.value,
       points: pointsRef.current?.value,
       group_name: groupRef.current?.value,
-      // submission_type: submissionTypeRef.current?.value, // You can add all fields
       due_date: dueRef.current?.value,
       available_date: availableFromRef.current?.value,
       until_date: availableUntilRef.current?.value,
@@ -93,12 +104,10 @@ export default function AssignmentEditor() {
       </div>
       <hr />
 
-      {/* 10. Form tag is updated to use onSubmit */}
       <form onSubmit={handleSave} className="assignment-editor" style={{ maxWidth: "600px", margin: "0 auto" }}>
           
           <label htmlFor="wd-name" className="mb-2"><b>Assignment Name</b></label>
           <br />
-          {/* 11. All fields now have a 'ref' and smart 'defaultValue' */}
           <input 
             id="wd-name" 
             className="form-control" 
@@ -229,7 +238,7 @@ export default function AssignmentEditor() {
                       </td>
                   </tr>
                   
-                  {/* 12. Save/Cancel buttons are now REAL buttons */}
+                  {/* Save/Cancel buttons */}
                   <tr>
                       <td colSpan={2} align="right">
                           <div className="d-flex justify-content-end pt-3">

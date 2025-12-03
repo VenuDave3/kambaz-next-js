@@ -11,9 +11,17 @@ const coursesSlice = createSlice({
   name: "courses",
   initialState,
   reducers: {
-    addNewCourse: (state, { payload: course }) => {
-      const newCourse = { ...course, _id: uuidv4() };
-      state.courses = [...state.courses, newCourse] as any;
+    // ✅ UPDATED: Payload is expected to be an object: { newCourseData, userId }
+    addNewCourse: (state, { payload }) => {
+      const newCourse = { 
+        ...payload.newCourseData, 
+        _id: uuidv4(),
+        // 🛑 NEW: Store the ID of the user who created the course
+        user: payload.userId, 
+      };
+      
+      // Using .push() is the idiomatic way to mutate state safely in Redux Toolkit
+      state.courses.push(newCourse);
     },
     deleteCourse: (state, { payload: courseId }) => {
       state.courses = state.courses.filter(
